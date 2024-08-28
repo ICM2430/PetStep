@@ -18,7 +18,7 @@
 
 ### Tecnologías Utilizadas
 
-- **Desarrollo de la Aplicación:** La aplicación está desarrollada para la plataforma Android utilizando tecnologías modernas y herramientas open source.
+- **Desarrollo de la Aplicación:** La aplicación está desarrollada para la plataforma Android utilizando tecnologías que involucren los sensores del dispositivo móvil.
 - **Monitoreo en Tiempo Real:** Se integra un sistema de GPS para rastreo en tiempo real, junto con un sistema de chat en vivo para la comunicación entre dueño y paseador.
 - **Seguridad y Confianza:** Implementación de un sistema de evaluaciones para paseadores, lo que permite a los usuarios evaluar la calidad del servicio y elegir con confianza.
 
