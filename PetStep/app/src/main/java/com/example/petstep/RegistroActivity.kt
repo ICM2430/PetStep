@@ -15,7 +15,7 @@ class RegistroActivity : AppCompatActivity() {
         binding = ActivityRegistroBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.button.setOnClickListener {
+        binding.iniciarsesionbutton.setOnClickListener {
             startActivity(Intent(baseContext,IniciarSesionActivity::class.java))
         }
 
