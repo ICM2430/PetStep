@@ -8,8 +8,9 @@
 
     <TextView
         android:id="@+id/fecha"
-        android:layout_width="327dp"
-        android:layout_height="31dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:text="15 de abril 2024 - 7:00AM - 9:00AM"
         android:gravity="center_vertical"
         android:textSize="12sp"
@@ -20,9 +21,10 @@
 
     <TextView
         android:id="@+id/ubicacion"
-        android:layout_width="328dp"
-        android:layout_height="33dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:text="Chapinero alto"
+        android:layout_marginStart="16dp"
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/divisor"
         app:layout_constraintEnd_toStartOf="@+id/valor"
@@ -31,11 +33,12 @@
 
     <TextView
         android:id="@+id/valor"
-        android:layout_width="87dp"
-        android:layout_height="0dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="TextView"
         android:gravity="center"
         android:textStyle="bold"
+        android:layout_marginEnd="16dp"
         app:layout_constraintBottom_toTopOf="@+id/divisor"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/fecha"
@@ -45,6 +48,8 @@
         android:id="@+id/divisor"
         android:layout_width="413dp"
         android:layout_height="2dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:background="#B55D5D5D"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

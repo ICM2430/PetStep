@@ -14,8 +14,8 @@ class PerfilActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPerfilBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.button3.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
+        binding.cerrarSesion.setOnClickListener {
+            startActivity(Intent(this, HistorialServiciosActivity::class.java))
         }
     }
 }

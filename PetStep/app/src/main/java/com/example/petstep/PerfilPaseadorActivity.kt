@@ -15,7 +15,7 @@ class PerfilPaseadorActivity : AppCompatActivity() {
         binding=ActivityPerfilPaseadorBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.buttonVerHistorial.setOnClickListener {
-            startActivity(Intent(this, HistorialServiciosActivity::class.java))
+            startActivity(Intent(this, IniciarSesionActivity::class.java))
         }
     }
 }
