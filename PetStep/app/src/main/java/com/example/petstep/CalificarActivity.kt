@@ -18,21 +18,22 @@ class CalificarActivity : AppCompatActivity() {
         binding = ActivityCalificarBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        /*
+
         val starIds = listOf(
             binding.star1, binding.star2, binding.star3, binding.star4, binding.star5,
             binding.star6, binding.star7, binding.star8, binding.star9, binding.star10,
             binding.star11, binding.star12, binding.star13, binding.star14, binding.star15
         )
 
-        val newDrawable = R.drawable.estrellaamarilla // Replace with your drawable
+        val newDrawable = R.drawable.baseline_star_24
 
         starIds.forEach { star ->
             star.setOnClickListener {
                 (it as ImageView).setImageResource(newDrawable)
+                it.invalidate()
             }
         }
-        */
+
 
     }
 
