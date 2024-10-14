@@ -49,7 +49,7 @@ class ProfilePhotoActivity : AppCompatActivity() {
         }
         //Poner actividad donde continue
         binding.buttonConfirmar.setOnClickListener{
-            startActivity(Intent(baseContext,SelectionActivity::class.java))
+            startActivity(Intent(baseContext,IniciarSesionActivity::class.java))
         }
     }
 

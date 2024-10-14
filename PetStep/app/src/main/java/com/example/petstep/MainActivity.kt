@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.registrarseButtom.setOnClickListener {
-            startActivity(Intent(baseContext,RegistroActivity::class.java))
+            startActivity(Intent(baseContext,SelectionActivity::class.java))
         }
     }
 }

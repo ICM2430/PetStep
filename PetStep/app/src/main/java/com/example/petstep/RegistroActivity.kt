@@ -22,5 +22,7 @@ class RegistroActivity : AppCompatActivity() {
         binding.registroButtom.setOnClickListener {
             startActivity(Intent(baseContext,ProfilePhotoActivity::class.java))
         }
+
+        val role = intent.getStringExtra("rol")
     }
 }

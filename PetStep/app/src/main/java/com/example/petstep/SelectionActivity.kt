@@ -13,7 +13,7 @@ class SelectionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySelectionBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        /*
         binding.confirmar.setOnClickListener {
             if (binding.roldueno.isChecked) {
                 startActivity(Intent(this, HomeActivity::class.java))
@@ -21,10 +21,13 @@ class SelectionActivity : AppCompatActivity() {
                 startActivity(Intent(this, HomeWalkerActivity::class.java))
             }
         }
-        /*
-
 
          */
+        binding.confirmar.setOnClickListener {
+            val intent = Intent(this, RegistroActivity::class.java)
+            intent.putExtra("rol", if (binding.roldueno.isChecked) "dueno" else "paseador")
+            startActivity(intent)
+        }
 
     }
 }
