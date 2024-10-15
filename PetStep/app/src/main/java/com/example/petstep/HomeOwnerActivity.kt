@@ -29,4 +29,6 @@ class HomeOwnerActivity : AppCompatActivity() {
             startActivity(Intent(this, RastreoActivity::class.java))
         }
     }
+
+
 }

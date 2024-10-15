@@ -26,6 +26,11 @@ class IniciarSesionActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
 
+        if(auth.currentUser != null){
+            //entrar dependiendo su rol
+            updateUI(auth.currentUser)
+        }
+
         binding.registrese.setOnClickListener {
             startActivity(Intent(baseContext, SelectionActivity::class.java))
         }
