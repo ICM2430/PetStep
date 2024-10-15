@@ -10,7 +10,7 @@
     <ImageView
         android:id="@+id/imageViewDecoracion"
         android:layout_width="0dp"
-        android:layout_height="200dp"
+        android:layout_height="150dp"
         android:scaleType="centerCrop"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -34,12 +34,10 @@
         android:id="@+id/imageViewPerfil"
         android:layout_width="100dp"
         android:layout_height="100dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@id/textViewMiPerfil"
-        app:layout_constraintStart_toStartOf="parent"
+        android:src="@drawable/fotodiego"
         app:layout_constraintEnd_toEndOf="parent"
-        android:src="@drawable/fotodiego" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textViewMiPerfil" />
 
     <TextView
         android:id="@+id/textViewNombre"
@@ -58,7 +56,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="40dp"
         android:background="@android:color/white"
@@ -67,7 +65,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewNombre">
+        app:layout_constraintTop_toBottomOf="@+id/textViewNombre">
 
         <TextView
             android:layout_width="wrap_content"
@@ -135,11 +133,11 @@
             android:textColor="@android:color/holo_blue_light" />
 
         <Button
-            android:id="@+id/buttonEditarPerfil"
+            android:id="@+id/buttonCerrarSesion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:backgroundTint="@android:color/holo_blue_light"
-            android:text="Editar perfil"
+            android:text="Cerrar Sesión"
             android:textColor="@android:color/white" />
 
     </LinearLayout>
