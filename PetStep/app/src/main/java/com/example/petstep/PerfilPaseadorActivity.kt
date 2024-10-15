@@ -41,17 +41,18 @@ class PerfilPaseadorActivity : AppCompatActivity() {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
                     val nombre = dataSnapshot.child("nombre").getValue(String::class.java) ?: "Name not available"
+                    val apellido = dataSnapshot.child("apellido").getValue(String::class.java) ?: "Last name not available"
                     val correo = dataSnapshot.child("correo").getValue(String::class.java) ?: "Email not available"
                     val telefono = dataSnapshot.child("telefono").getValue(String::class.java) ?: "Phone number not available"
 
-                    binding.textViewMiPerfil.text = nombre
+                    binding.textViewNombre.text = "$nombre $apellido"
                     binding.textViewCorreo.text = correo
                     binding.textViewTelefono.text = telefono
                     binding.textViewCalificacion.text = "4.9/5"
                     binding.textViewNumServicios.text = "2"
                 } else {
                     // Handle case where user data does not exist
-                    binding.textViewMiPerfil.text = "Name not available"
+                    binding.textViewNombre.text = "Name not available"
                     binding.textViewCorreo.text = "Email not available"
                     binding.textViewTelefono.text = "Phone number not available"
                 }

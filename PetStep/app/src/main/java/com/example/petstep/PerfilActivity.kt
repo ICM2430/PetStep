@@ -38,10 +38,11 @@ class PerfilActivity : AppCompatActivity() {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 if (dataSnapshot.exists()) {
                     val nombre = dataSnapshot.child("nombre").getValue(String::class.java) ?: "Name not available"
+                    val apellido = dataSnapshot.child("apellido").getValue(String::class.java) ?: "Last name not available"
                     val correo = dataSnapshot.child("correo").getValue(String::class.java) ?: "Email not available"
                     val telefono = dataSnapshot.child("telefono").getValue(String::class.java) ?: "Phone number not available"
 
-                    binding.username.text = nombre
+                    binding.username.text = "$nombre $apellido"
                     binding.correoEditar.text = correo
                     binding.numeroEditar.text = telefono
                 } else {
