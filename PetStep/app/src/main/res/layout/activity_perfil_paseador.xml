@@ -7,14 +7,45 @@
     android:layout_height="match_parent"
     tools:context=".PerfilPaseadorActivity">
 
+    <ImageButton
+        android:id="@+id/volverAlMenu"
+        android:layout_width="45dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="340dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="26dp"
+        android:layout_marginBottom="193dp"
+        android:backgroundTint="@android:color/transparent"
+        android:src="@drawable/baseline_exit_to_app_24"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayoutInfo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewDecoracion" />
+
+    <ImageButton
+        android:id="@+id/editarFotoBoton"
+        android:layout_width="49dp"
+        android:layout_height="51dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="56dp"
+        android:layout_marginBottom="198dp"
+        android:backgroundTint="@android:color/transparent"
+        android:src="@drawable/baseline_edit_24"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayoutInfo"
+        app:layout_constraintEnd_toStartOf="@+id/imageViewPerfil"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewDecoracion" />
+
     <ImageView
         android:id="@+id/imageViewDecoracion"
-        android:layout_width="0dp"
-        android:layout_height="150dp"
+        android:layout_width="413dp"
+        android:layout_height="95dp"
         android:scaleType="centerCrop"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/circulosdecoracion" />
 
     <TextView
@@ -32,8 +63,8 @@
 
     <ImageView
         android:id="@+id/imageViewPerfil"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="138dp"
+        android:layout_height="142dp"
         android:src="@drawable/fotodiego"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -44,12 +75,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Sandra Perez"
+        android:textColor="@android:color/black"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:textColor="@android:color/black"
-        app:layout_constraintTop_toBottomOf="@id/imageViewPerfil"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/imageViewPerfil" />
 
     <LinearLayout
         android:id="@+id/linearLayoutInfo"
@@ -64,8 +95,10 @@
         android:padding="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewNombre">
+        app:layout_constraintTop_toBottomOf="@+id/textViewNombre"
+        app:layout_constraintVertical_bias="1.0">
 
         <TextView
             android:layout_width="wrap_content"

@@ -96,14 +96,14 @@
         app:layout_constraintTop_toBottomOf="@+id/correoEditar" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/botonEditarFoto"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:backgroundTint="#38CADD"
         android:layout_marginLeft="35dp"
+        android:layout_marginTop="12dp"
         android:layout_marginRight="35dp"
-        android:text="Editar Perfil"
+        android:backgroundTint="#38CADD"
+        android:text="Añadir Foto de Perfil"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/numeroEditar" />
@@ -119,17 +119,19 @@
         android:text="Cerrar Sesión"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button2" />
+        app:layout_constraintTop_toBottomOf="@+id/botonEditarFoto" />
 
-    <View
-        android:id="@+id/view"
-        android:layout_width="0dp"
-        android:layout_height="75dp"
-        android:layout_marginTop="25dp"
-        android:background="#37CADD"
-        android:backgroundTint="#37CADD"
+    <Button
+        android:id="@+id/volverAlMenu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="134dp"
+        android:layout_marginEnd="134dp"
+        android:layout_marginBottom="32dp"
+        android:text="Volver al menú"
+        android:backgroundTint="#1568E2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/cerrarSesion" />
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

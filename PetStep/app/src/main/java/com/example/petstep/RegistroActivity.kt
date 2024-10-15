@@ -106,7 +106,7 @@ class RegistroActivity : AppCompatActivity() {
                 val userRolePath = if (rol == "dueno") "duenos" else "paseadores"
                 realtimeDb.getReference("users/$userRolePath").child(userId).setValue(user).addOnSuccessListener {
                     Toast.makeText(baseContext, "User saved to Realtime Database", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(baseContext, ProfilePhotoActivity::class.java))
+                    startActivity(Intent(baseContext, IniciarSesionActivity::class.java))
                 }.addOnFailureListener {
                     Toast.makeText(baseContext, "Failed to save user to Realtime Database", Toast.LENGTH_SHORT).show()
                 }
