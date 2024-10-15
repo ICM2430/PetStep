@@ -1,5 +1,6 @@
 package com.example.petstep
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -26,6 +27,7 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
         ActivityResultContracts.GetContent(), ActivityResultCallback {
             if (it != null) {
                 loadImage(it)
+                saveImageUri(it)
                 sendImageUri(it)
             }
         }
@@ -36,6 +38,7 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
         ActivityResultCallback {
             if (it) {
                 loadImage(uri)
+                saveImageUri(uri)
                 sendImageUri(uri)
             }
         }
@@ -69,6 +72,13 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
         val imageStream = contentResolver.openInputStream(uri)
         val bitmap = BitmapFactory.decodeStream(imageStream)
         binding.imageFotoperfil.setImageBitmap(bitmap)
+    }
+
+    private fun saveImageUri(uri: Uri) {
+        val sharedPreferences = getSharedPreferences("ProfilePhotoPaseadorPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("imageUri", uri.toString())
+        editor.apply()
     }
 
     private fun sendImageUri(uri: Uri) {

@@ -1,5 +1,6 @@
 package com.example.petstep
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -26,6 +27,7 @@ class ProfilePhotoActivity : AppCompatActivity() {
         ActivityResultContracts.GetContent(), ActivityResultCallback {
             if (it != null) {
                 loadImage(it)
+                saveImageUri(it)
                 sendImageUri(it)
             }
         }
@@ -36,6 +38,7 @@ class ProfilePhotoActivity : AppCompatActivity() {
         ActivityResultCallback {
             if (it) {
                 loadImage(uri)
+                saveImageUri(uri)
                 sendImageUri(uri)
             }
         }
@@ -49,7 +52,6 @@ class ProfilePhotoActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
         val userId = auth.currentUser?.uid
-
 
         binding.buttonAbrirGaleria.setOnClickListener {
             galleryLauncher.launch("image/*")
@@ -72,9 +74,14 @@ class ProfilePhotoActivity : AppCompatActivity() {
         binding.imageFotoperfil.setImageBitmap(bitmap)
     }
 
+    private fun saveImageUri(uri: Uri) {
+        val sharedPreferences = getSharedPreferences("ProfilePhotoPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("imageUri", uri.toString())
+        editor.apply()
+    }
+
     private fun sendImageUri(uri: Uri) {
-
-
         val intent = Intent(this, PerfilActivity::class.java)
         intent.putExtra("imageUri", uri.toString())
         startActivity(intent)

@@ -1,5 +1,6 @@
 package com.example.petstep
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -36,12 +37,12 @@ class PerfilPaseadorActivity : AppCompatActivity() {
         binding.editarFotoBoton.setOnClickListener {
             startActivity(Intent(this, ProfilePhotoPaseadorActivity::class.java))
         }
-
-        val imageUri = intent.getStringExtra("imageUri")
-        if (imageUri != null) {
-            val uri = Uri.parse(imageUri)
-            Glide.with(this).load(uri).into(binding.imageViewPerfil)
+        binding.volverAlMenu.setOnClickListener {
+            startActivity(Intent(this, HomeWalkerActivity::class.java))
         }
+
+        // Load image URI from SharedPreferences
+        loadImageUri()
 
         // Fetch user data from Firebase Realtime Database
         fetchUserData()
@@ -73,5 +74,14 @@ class PerfilPaseadorActivity : AppCompatActivity() {
                 // Handle database error
             }
         })
+    }
+
+    private fun loadImageUri() {
+        val sharedPreferences = getSharedPreferences("ProfilePhotoPaseadorPrefs", Context.MODE_PRIVATE)
+        val imageUri = sharedPreferences.getString("imageUri", null)
+        if (imageUri != null) {
+            val uri = Uri.parse(imageUri)
+            Glide.with(this).load(uri).into(binding.imageViewPerfil)
+        }
     }
 }
