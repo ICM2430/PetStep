@@ -15,10 +15,10 @@ class IniciarSesionActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.registrese.setOnClickListener {
-            startActivity(Intent(baseContext,RegistroActivity::class.java))
+            startActivity(Intent(baseContext,SelectionActivity::class.java))
         }
         binding.ingresarButtom.setOnClickListener {
-            startActivity(Intent(baseContext,HomeActivity::class.java))
+            startActivity(Intent(baseContext,HomeOwnerActivity::class.java))
         }
     }
 }
