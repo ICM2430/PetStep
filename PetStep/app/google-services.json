@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "538238026992",
+    "project_id": "petstep-64a04",
+    "storage_bucket": "petstep-64a04.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:538238026992:android:d3d1e7387c93ad47bdee35",
+        "android_client_info": {
+          "package_name": "com.example.petstep"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6gCaSNN1eauikeXw7GyxM4JIap9cWdbo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
