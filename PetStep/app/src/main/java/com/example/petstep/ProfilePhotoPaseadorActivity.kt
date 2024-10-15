@@ -8,15 +8,15 @@ import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
-import com.example.petstep.databinding.ActivityProfilePhotoBinding
+import com.example.petstep.databinding.ActivityProfilePhotoPaseadorBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import java.io.File
 
-class ProfilePhotoActivity : AppCompatActivity() {
+class ProfilePhotoPaseadorActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityProfilePhotoBinding
+    private lateinit var binding: ActivityProfilePhotoPaseadorBinding
     private lateinit var uri: Uri
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
@@ -43,13 +43,12 @@ class ProfilePhotoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityProfilePhotoBinding.inflate(layoutInflater)
+        binding = ActivityProfilePhotoPaseadorBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
         val userId = auth.currentUser?.uid
-
 
         binding.buttonAbrirGaleria.setOnClickListener {
             galleryLauncher.launch("image/*")
@@ -73,9 +72,7 @@ class ProfilePhotoActivity : AppCompatActivity() {
     }
 
     private fun sendImageUri(uri: Uri) {
-
-
-        val intent = Intent(this, PerfilActivity::class.java)
+        val intent = Intent(this, PerfilPaseadorActivity::class.java)
         intent.putExtra("imageUri", uri.toString())
         startActivity(intent)
     }
