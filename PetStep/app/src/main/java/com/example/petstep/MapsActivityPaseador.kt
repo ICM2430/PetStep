@@ -34,6 +34,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -255,10 +256,9 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
                         if (distancia(
                                 LatLng(posActual!!.latitude, posActual!!.longitude),
                                 location
-                            ) > 0.01
+                            ) > 0.02
                         ) {
                             posActual = location
-                            mMap.clear()
                             writeJSON()
                         }
                     }
@@ -267,7 +267,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
                     drawMarker(
                         LatLng(posActual!!.latitude, posActual!!.longitude),
                         "PosActual",
-                        R.drawable.paseador
+                        R.drawable.baseline_location_pin_24
                     )
                 }
             }
@@ -319,7 +319,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
             for (point in roadOverlay!!.points) {
                 polylineOptions.add(LatLng(point.latitude, point.longitude))
             }
-            polylineOptions.color(Color.WHITE)
+            polylineOptions.color(Color.BLUE)
             polylineOptions.width(10F)
             mMap.addPolyline(polylineOptions)
         }
