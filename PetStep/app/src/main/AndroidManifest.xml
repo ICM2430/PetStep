@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
         android:allowBackup="true"
@@ -15,6 +17,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PetStep"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
         <activity
             android:name=".ProfilePhotoPaseadorActivity"
             android:exported="false" />
@@ -62,13 +69,16 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".MainActivity"
             android:exported="true"></activity>
+        <activity
+            android:name=".MapsActivityPaseador"
+            android:exported="false"
+            android:label="@string/title_activity_maps_paseador" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
