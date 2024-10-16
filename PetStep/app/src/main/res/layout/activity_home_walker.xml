@@ -177,11 +177,12 @@
         android:id="@+id/casa"
         android:layout_width="100dp"
         android:layout_height="81dp"
-        android:layout_marginStart="42dp"
+        android:layout_marginStart="16dp"
         android:layout_marginBottom="46dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/inicio"
+        app:layout_constraintVertical_bias="0.489"
         app:srcCompat="@drawable/casa" />
 
     <ImageView
@@ -190,7 +191,6 @@
         android:layout_height="82dp"
         android:layout_marginBottom="46dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/perfil"
         app:layout_constraintStart_toEndOf="@+id/casa"
         app:layout_constraintTop_toBottomOf="@+id/inicio"
         app:srcCompat="@drawable/paseador" />
@@ -199,12 +199,24 @@
         android:id="@+id/perfil"
         android:layout_width="88dp"
         android:layout_height="82dp"
-        android:layout_marginEnd="42dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="45dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/fin"
+        app:layout_constraintVertical_bias="0.489"
         app:srcCompat="@drawable/avatar" />
+
+    <ImageView
+        android:id="@+id/ubiActual"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="46dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/perfil"
+        app:layout_constraintStart_toEndOf="@+id/paseo"
+        app:layout_constraintTop_toBottomOf="@+id/fin"
+        app:srcCompat="@drawable/baseline_map_24" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

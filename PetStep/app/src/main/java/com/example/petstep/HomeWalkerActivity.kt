@@ -41,6 +41,9 @@ class HomeWalkerActivity : AppCompatActivity() {
         binding.perfil.setOnClickListener {
             startActivity(Intent(this, PerfilPaseadorActivity::class.java))
         }
+        binding.ubiActual.setOnClickListener{
+            startActivity(Intent(this, MapsActivityPaseador::class.java))
+        }
         fetchUserData()
 
     }
