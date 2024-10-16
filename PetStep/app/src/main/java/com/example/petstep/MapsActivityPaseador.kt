@@ -8,12 +8,17 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.os.StrictMode
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.IntentSenderRequest
@@ -29,7 +34,6 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -60,17 +64,18 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsPaseadorBinding
 
-    //OSM
+    // OSRM Routing
     private lateinit var geocoder: Geocoder
-    private lateinit var roadManager : RoadManager
-    private var roadOverlay : Polyline? = null
+    private lateinit var roadManager: RoadManager
+    private var roadOverlay: Polyline? = null
 
+    // Location
     val locationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission(), ActivityResultCallback {
-            if(it){//granted
+            if (it) { // granted
                 locationSettings()
-            }else {//denied
-
+            } else { // denied
+                Toast.makeText(this, "Location permission denied.", Toast.LENGTH_SHORT).show()
             }
         })
     private val locationSettings = registerForActivityResult(
@@ -84,37 +89,70 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         }
     )
 
-    lateinit var locationRequest : LocationRequest
+    lateinit var locationRequest: LocationRequest
     lateinit var locationCallback: LocationCallback
 
-    var burnLoc = LatLng(4.619693158601781,-74.08496767920794)
+    var burnLoc = LatLng(4.619693158601781, -74.08496767920794)
 
-    //ubicacion del usuario
+    // User location
     lateinit var locationClient: FusedLocationProviderClient
-    private var posActual : Location?= null
+    private var posActual: Location? = null
 
     var locations = mutableListOf<JSONObject>()
+
+    // Sensor Management
+    private lateinit var sensorManager: SensorManager
+    private var lightSensor: Sensor? = null
+    private var accelerometer: Sensor? = null
+    private lateinit var sensorEventListener: SensorEventListener
+
+    // Step Counter
+    private var stepCount: Int = 0
+    private lateinit var stepCounterTextView: TextView
+
+    private var previousY: Float = 0f
+    private var threshold: Float = 2.0f // Example threshold for step detection
+    private var isStepDetected: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMapsPaseadorBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Initialize UI components
+        stepCounterTextView = findViewById(R.id.stepCounter) // Ensure this TextView exists in your layout
+
         geocoder = Geocoder(baseContext)
-        roadManager = OSRMRoadManager(this,"ANDROID")
+        roadManager = OSRMRoadManager(this, "ANDROID")
 
         locationClient = LocationServices.getFusedLocationProviderClient(this)
         locationRequest = createLocationRequest()
         locationCallback = createLocationCallBack()
         locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
+        // Allow network operations on main thread (if necessary)
         val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
         StrictMode.setThreadPolicy(policy)
 
-        binding.ruta.setOnClickListener{
-            drawRoute(GeoPoint(burnLoc.latitude,burnLoc.longitude),GeoPoint(posActual!!.latitude,posActual!!.longitude))
-            drawMarker(burnLoc,"Quemadero",R.drawable.baseline_location_pin_24)
+        binding.ruta.setOnClickListener {
+            posActual?.let {
+                drawRoute(
+                    GeoPoint(burnLoc.latitude, burnLoc.longitude),
+                    GeoPoint(it.latitude, it.longitude)
+                )
+                drawMarker(
+                    burnLoc,
+                    "Quemadero",
+                    R.drawable.baseline_location_pin_24
+                )
+            } ?: Toast.makeText(this, "Current location not available.", Toast.LENGTH_SHORT).show()
         }
+
+        // Initialize Sensor Manager and Sensors
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sensorEventListener = createSensorEventListener()
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -124,34 +162,38 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
 
     /**
      * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        val bogota = LatLng(4.34, 74.3)
+        val bogota = LatLng(4.34, -74.3) // Corrected longitude sign for Bogotá
         mMap.moveCamera(CameraUpdateFactory.newLatLng(bogota))
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17f))
     }
-    fun drawMarker(location : LatLng, description : String?, icon: Int){
-        val addressMarker = mMap.addMarker(MarkerOptions().position(location).icon(bitmapDescriptorFromVector(this,
-            icon)))!!
-        if(description!=null){
-            addressMarker.title=description
+
+    fun drawMarker(location: LatLng, description: String?, icon: Int) {
+        val addressMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(location)
+                .icon(bitmapDescriptorFromVector(this, icon))
+        )!!
+        description?.let {
+            addressMarker.title = it
         }
         mMap.moveCamera(CameraUpdateFactory.newLatLng(location))
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17f))
     }
 
-    fun bitmapDescriptorFromVector(context : Context, vectorResId : Int) : BitmapDescriptor {
-        val vectorDrawable : Drawable = ContextCompat.getDrawable(context, vectorResId)!!
-        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight());
-        val bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight(),
-            Bitmap.Config.ARGB_8888);
+    fun bitmapDescriptorFromVector(context: Context, vectorResId: Int): BitmapDescriptor {
+        val vectorDrawable: Drawable = ContextCompat.getDrawable(context, vectorResId)!!
+        vectorDrawable.setBounds(
+            0, 0, vectorDrawable.intrinsicWidth,
+            vectorDrawable.intrinsicHeight
+        )
+        val bitmap = Bitmap.createBitmap(
+            vectorDrawable.intrinsicWidth,
+            vectorDrawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
         val canvas = Canvas(bitmap)
         vectorDrawable.draw(canvas)
         return BitmapDescriptorFactory.fromBitmap(bitmap)
@@ -181,54 +223,70 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            locationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
         }
     }
 
-    fun createLocationRequest() : LocationRequest{
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
+    fun createLocationRequest(): LocationRequest {
+        return LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
             .setWaitForAccurateLocation(true)
             .setMinUpdateIntervalMillis(5000)
             .build()
-        return locationRequest
     }
 
-    fun createLocationCallBack() : LocationCallback{
-        val locationCallback = object : LocationCallback(){
+    fun createLocationCallBack(): LocationCallback {
+        return object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 super.onLocationResult(result)
-                val location= result.lastLocation
-                if(location!=null){
-                    if(posActual==null){
-                        posActual=location
-                    }else{
-                        if(distancia(LatLng(posActual!!.latitude,posActual!!.longitude), location)>0.01){
-                            posActual=location
+                val location = result.lastLocation
+                if (location != null) {
+                    if (posActual == null) {
+                        posActual = location
+                    } else {
+                        if (distancia(
+                                LatLng(posActual!!.latitude, posActual!!.longitude),
+                                location
+                            ) > 0.01
+                        ) {
+                            posActual = location
                             mMap.clear()
                             writeJSON()
                         }
                     }
-                    Log.i("LocationHelp","${posActual!!.latitude}")
+                    Log.i("LocationHelp", "${posActual!!.latitude}")
                     posActual = result.lastLocation!!
-                    drawMarker(LatLng(posActual!!.latitude,posActual!!.longitude),"PosActual",R.drawable.paseador)
+                    drawMarker(
+                        LatLng(posActual!!.latitude, posActual!!.longitude),
+                        "PosActual",
+                        R.drawable.paseador
+                    )
                 }
             }
         }
-        return locationCallback
     }
-    private fun writeJSON(){
-        val myLocation = MyLocation(Date(System.currentTimeMillis()), posActual!!.latitude, posActual!!.longitude)
+
+    private fun writeJSON() {
+        val myLocation =
+            MyLocation(Date(System.currentTimeMillis()), posActual!!.latitude, posActual!!.longitude)
         locations.add(myLocation.toJSON())
-        val filename= "locations.json"
+        val filename = "locations.json"
         val file = File(baseContext.getExternalFilesDir(null), filename)
         val output = BufferedWriter(FileWriter(file))
         output.write(locations.toString())
         output.close()
-        Log.i("LOCATION", "File modified at path" + file)
+        Log.i("LOCATION", "File modified at path $file")
     }
 
-    fun distancia( longpress : LatLng , actual : Location) : Float {
+    fun distancia(longpress: LatLng, actual: Location): Float {
         val pk = (180f / Math.PI).toFloat()
 
         val a1: Double = longpress.latitude / pk
@@ -243,20 +301,19 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
 
         return (6366000 * tt).toFloat()
     }
-    fun drawRoute(finish : GeoPoint, start : GeoPoint){
-        var routePoints = ArrayList<GeoPoint>()
+
+    fun drawRoute(finish: GeoPoint, start: GeoPoint) {
+        val routePoints = ArrayList<GeoPoint>()
         routePoints.add(start)
         routePoints.add(finish)
         val road = roadManager.getRoad(routePoints)
-        if(mMap!=null){
-            if(roadOverlay != null){
-                (roadOverlay as? Overlay)?.let { overlay ->
-                    mMap.clear() // Clear all overlays
-                }
+        if (::mMap.isInitialized) {
+            roadOverlay?.let {
+                mMap.clear() // Clear all overlays
             }
             roadOverlay = RoadManager.buildRoadOverlay(road)
-            roadOverlay!!.getOutlinePaint().setColor(Color.BLUE)
-            roadOverlay!!.getOutlinePaint().setStrokeWidth(10F)
+            roadOverlay!!.outlinePaint.color = Color.BLUE
+            roadOverlay!!.outlinePaint.strokeWidth = 10F
 
             val polylineOptions = PolylineOptions()
             for (point in roadOverlay!!.points) {
@@ -265,7 +322,100 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
             polylineOptions.color(Color.WHITE)
             polylineOptions.width(10F)
             mMap.addPolyline(polylineOptions)
+        }
+    }
 
+    // Sensor Event Listener
+    private fun createSensorEventListener(): SensorEventListener {
+        return object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+                when (event?.sensor?.type) {
+                    Sensor.TYPE_ACCELEROMETER -> {
+                        val y = event.values[1]
+                        // Simple step detection logic
+                        if (previousY != 0f) {
+                            val deltaY = y - previousY
+                            if (deltaY > threshold && !isStepDetected) {
+                                stepCount++
+                                updateStepCounter()
+                                isStepDetected = true
+                            } else if (deltaY < -threshold) {
+                                isStepDetected = false
+                            }
+                        }
+                        previousY = y
+                    }
+                    Sensor.TYPE_LIGHT -> {
+                        val light = event.values[0]
+                        if (::mMap.isInitialized) {
+                            if (light < 1000) {
+                                // Apply dark map style
+                                try {
+                                    val success = mMap.setMapStyle(
+                                        com.google.android.gms.maps.model.MapStyleOptions.loadRawResourceStyle(
+                                            this@MapsActivityPaseador,
+                                            R.raw.map_dark
+                                        )
+                                    )
+                                    if (!success) {
+                                        Log.e("MapStyle", "Dark style parsing failed.")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MapStyle", "Can't find dark style. Error: ", e)
+                                }
+                            } else {
+                                // Apply light map style
+                                try {
+                                    val success = mMap.setMapStyle(
+                                        com.google.android.gms.maps.model.MapStyleOptions.loadRawResourceStyle(
+                                            this@MapsActivityPaseador,
+                                            R.raw.map_light
+                                        )
+                                    )
+                                    if (!success) {
+                                        Log.e("MapStyle", "Light style parsing failed.")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MapStyle", "Can't find light style. Error: ", e)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Register sensor listeners
+        accelerometer?.let {
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+        lightSensor?.let {
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Unregister sensor listeners
+        sensorManager.unregisterListener(sensorEventListener)
+    }
+
+    private fun updateStepCounter() {
+        runOnUiThread {
+            stepCounterTextView.text = "Steps: $stepCount"
         }
     }
 }
