@@ -81,6 +81,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="64dp"
+        android:layout_marginTop="80dp"
         android:text="¿Primera vez?"
         android:textSize="18dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -92,6 +93,7 @@
         android:id="@+id/registrese"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="80dp"
         android:backgroundTint="#FFFFFF"
         android:text="Regístrese"
         android:textColor="#00E2FF"
@@ -101,4 +103,19 @@
         app:layout_constraintStart_toEndOf="@+id/textView3"
         app:layout_constraintTop_toBottomOf="@+id/ingresarButtom"
         app:layout_constraintVertical_bias="0.198" />
+
+    <Button
+        android:id="@+id/biometricButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="64dp"
+        android:layout_marginEnd="64dp"
+        android:layout_marginBottom="70dp"
+        android:backgroundTint="#3400BCD4"
+        android:text="Inicie sesion con huella"
+        android:textColor="#03A9F4"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ingresarButtom" />
 </androidx.constraintlayout.widget.ConstraintLayout>
