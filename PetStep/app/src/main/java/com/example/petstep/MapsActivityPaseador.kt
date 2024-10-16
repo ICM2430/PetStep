@@ -43,7 +43,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.MapStyleOptions
-
+import android.widget.TextView
 import org.json.JSONObject
 
 import java.io.BufferedWriter
@@ -60,7 +60,17 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityMapsPaseadorBinding
     private lateinit var sensorManager: SensorManager
     private var lightSensor: Sensor? = null
+    private var accelerometer: Sensor? = null
     private lateinit var sensorEventListener: SensorEventListener
+
+    // Step counter
+    private var stepCount: Int = 0
+    private lateinit var stepCounterTextView: TextView
+
+    private var previousY: Float = 0f
+    private var threshold: Float = 2.0f // Example threshold for step detection
+    private var isStepDetected: Boolean = false
+
 
     private var roadOverlay : Polyline? = null
 
@@ -97,6 +107,10 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         binding = ActivityMapsPaseadorBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Initialize UI components
+        stepCounterTextView = findViewById(R.id.stepCounter)
+
         locationClient = LocationServices.getFusedLocationProviderClient(this)
         locationRequest = createLocationRequest()
         locationCallback = createLocationCallBack()
@@ -105,6 +119,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         // Initialize Sensor Manager and Light Sensor
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         sensorEventListener = createSensorEventListener()
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -238,17 +253,48 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         return object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent?) {
                 if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+                    val y = event.values[1]
+                    // Simple step detection logic
+                    if (previousY != 0f) {
+                        val deltaY = y - previousY
+                        if (deltaY > threshold && !isStepDetected) {
+                            stepCount++
+                            updateStepCounter()
+                            isStepDetected = true
+                        } else if (deltaY < -threshold) {
+                            isStepDetected = false
+                        }
+                    }
+                    previousY = y
+                }
+                // Existing light sensor handling
+                if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
                     val light = event.values[0]
                     if (::mMap.isInitialized) {
                         if (light < 1000) {
                             // Apply dark map style
-                            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivityPaseador, R.raw.map_dark))
+                            try {
+                                val success = mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivityPaseador, R.raw.map_dark))
+                                if (!success) {
+                                    Log.e("MapStyle", "Dark style parsing failed.")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MapStyle", "Can't find dark style. Error: ", e)
+                            }
                         } else {
                             // Apply light map style
-                            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivityPaseador, R.raw.map_light))
+                            try {
+                                val success = mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivityPaseador, R.raw.map_light))
+                                if (!success) {
+                                    Log.e("MapStyle", "Light style parsing failed.")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MapStyle", "Can't find light style. Error: ", e)
+                            }
                         }
                     }
                 }
+
             }
 
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
@@ -256,6 +302,10 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     }
     override fun onResume() {
         super.onResume()
+        // Register accelerometer sensor listener
+        accelerometer?.let {
+            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
         lightSensor?.let {
             sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -263,6 +313,14 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onPause() {
         super.onPause()
+        // Unregister sensor listeners
         sensorManager.unregisterListener(sensorEventListener)
+
+        sensorManager.unregisterListener(sensorEventListener)
+    }
+    private fun updateStepCounter() {
+        runOnUiThread {
+            stepCounterTextView.text = "Steps: $stepCount"
+        }
     }
 }
