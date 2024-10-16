@@ -6,10 +6,13 @@ import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.os.StrictMode
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
@@ -37,9 +40,13 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.Polyline
+import com.google.android.gms.maps.model.PolylineOptions
 import org.json.JSONObject
-
+import org.osmdroid.bonuspack.routing.OSRMRoadManager
+import org.osmdroid.bonuspack.routing.RoadManager
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Overlay
+import org.osmdroid.views.overlay.Polyline
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -53,6 +60,9 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsPaseadorBinding
 
+    //OSM
+    private lateinit var geocoder: Geocoder
+    private lateinit var roadManager : RoadManager
     private var roadOverlay : Polyline? = null
 
     val locationPermission = registerForActivityResult(
@@ -77,6 +87,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     lateinit var locationRequest : LocationRequest
     lateinit var locationCallback: LocationCallback
 
+    var burnLoc = LatLng(4.619693158601781,-74.08496767920794)
 
     //ubicacion del usuario
     lateinit var locationClient: FusedLocationProviderClient
@@ -88,10 +99,23 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         binding = ActivityMapsPaseadorBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        geocoder = Geocoder(baseContext)
+        roadManager = OSRMRoadManager(this,"ANDROID")
+
         locationClient = LocationServices.getFusedLocationProviderClient(this)
         locationRequest = createLocationRequest()
         locationCallback = createLocationCallBack()
         locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+        StrictMode.setThreadPolicy(policy)
+
+        binding.ruta.setOnClickListener{
+            drawRoute(GeoPoint(burnLoc.latitude,burnLoc.longitude),GeoPoint(posActual!!.latitude,posActual!!.longitude))
+            drawMarker(burnLoc,"Quemadero",R.drawable.baseline_location_pin_24)
+        }
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
@@ -187,7 +211,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
                     }
                     Log.i("LocationHelp","${posActual!!.latitude}")
                     posActual = result.lastLocation!!
-                    drawMarker(LatLng(posActual!!.latitude,posActual!!.longitude),"PosActual",R.drawable.baseline_location_pin_24)
+                    drawMarker(LatLng(posActual!!.latitude,posActual!!.longitude),"PosActual",R.drawable.paseador)
                 }
             }
         }
@@ -218,5 +242,30 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         val tt = acos(t1 + t2 + t3)
 
         return (6366000 * tt).toFloat()
+    }
+    fun drawRoute(finish : GeoPoint, start : GeoPoint){
+        var routePoints = ArrayList<GeoPoint>()
+        routePoints.add(start)
+        routePoints.add(finish)
+        val road = roadManager.getRoad(routePoints)
+        if(mMap!=null){
+            if(roadOverlay != null){
+                (roadOverlay as? Overlay)?.let { overlay ->
+                    mMap.clear() // Clear all overlays
+                }
+            }
+            roadOverlay = RoadManager.buildRoadOverlay(road)
+            roadOverlay!!.getOutlinePaint().setColor(Color.BLUE)
+            roadOverlay!!.getOutlinePaint().setStrokeWidth(10F)
+
+            val polylineOptions = PolylineOptions()
+            for (point in roadOverlay!!.points) {
+                polylineOptions.add(LatLng(point.latitude, point.longitude))
+            }
+            polylineOptions.color(Color.WHITE)
+            polylineOptions.width(10F)
+            mMap.addPolyline(polylineOptions)
+
+        }
     }
 }
