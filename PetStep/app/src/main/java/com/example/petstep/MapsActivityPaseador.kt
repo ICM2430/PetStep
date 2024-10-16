@@ -7,6 +7,10 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
@@ -38,6 +42,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
+import com.google.android.gms.maps.model.MapStyleOptions
+
 import org.json.JSONObject
 
 import java.io.BufferedWriter
@@ -52,6 +58,9 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsPaseadorBinding
+    private lateinit var sensorManager: SensorManager
+    private var lightSensor: Sensor? = null
+    private lateinit var sensorEventListener: SensorEventListener
 
     private var roadOverlay : Polyline? = null
 
@@ -92,6 +101,12 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         locationRequest = createLocationRequest()
         locationCallback = createLocationCallBack()
         locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+
+        // Initialize Sensor Manager and Light Sensor
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        sensorEventListener = createSensorEventListener()
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
@@ -218,5 +233,36 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         val tt = acos(t1 + t2 + t3)
 
         return (6366000 * tt).toFloat()
+    }
+    private fun createSensorEventListener(): SensorEventListener {
+        return object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent?) {
+                if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+                    val light = event.values[0]
+                    if (::mMap.isInitialized) {
+                        if (light < 1000) {
+                            // Apply dark map style
+                            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivityPaseador, R.raw.map_dark))
+                        } else {
+                            // Apply light map style
+                            mMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(this@MapsActivityPaseador, R.raw.map_light))
+                        }
+                    }
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+    }
+    override fun onResume() {
+        super.onResume()
+        lightSensor?.let {
+            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(sensorEventListener)
     }
 }
