@@ -90,6 +90,8 @@ dependencies {
     implementation("com.google.firebase:firebase-appcheck-debug:18.0.0")
     implementation("com.google.firebase:firebase-database:20.0.0")
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    implementation("com.google.firebase:firebase-analytics")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
