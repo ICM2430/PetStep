@@ -36,7 +36,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="64dp"
-        android:layout_marginTop="61dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="64dp"
         android:backgroundTint="#3400BCD4"
         android:text="Iniciar sesion"
