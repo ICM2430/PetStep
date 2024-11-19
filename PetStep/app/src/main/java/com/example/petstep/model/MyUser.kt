@@ -28,5 +28,6 @@ class MyUser {
         this.correo = correo
         this.contrasena = contrasena
         this.rol = rol
+        this.image = ""
     }
 }
