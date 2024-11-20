@@ -7,7 +7,7 @@
     android:orientation="vertical"
     android:padding="16dp"
     tools:context=".AddPetActivity">
- 
+
     <ImageView
         android:id="@+id/petPhotoImageView"
         android:layout_width="200dp"
@@ -16,7 +16,7 @@
         android:layout_marginBottom="16dp"
         android:background="@android:color/darker_gray"
         android:contentDescription="Pet Photo" />
-
+ 
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"

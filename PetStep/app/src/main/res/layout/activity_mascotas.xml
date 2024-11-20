@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Mis Mascotas" 
+        android:text="Mis Mascotas"
         android:textSize="34sp"
         android:textStyle="bold"
         android:gravity="center" />
@@ -30,7 +30,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:layout_margin="16dp" />
-
+ 
     <TextView
         android:id="@+id/emptyView"
         android:layout_width="match_parent"
@@ -40,7 +40,7 @@
         android:visibility="gone"/>
 
     <Button
-        android:id="@+id/buttonAgregarMascota" 
+        android:id="@+id/buttonAgregarMascota"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:backgroundTint="#38CADD"
