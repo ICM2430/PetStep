@@ -72,7 +72,7 @@ class IniciarSesionActivity : AppCompatActivity() {
 
     private fun setupBiometricAuthentication() {
         val biometricManager = BiometricManager.from(this)
-        when (biometricManager.canAuthenticate()) {
+        when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
             BiometricManager.BIOMETRIC_SUCCESS -> Log.d(TAG, "App can authenticate using biometrics.")
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> Log.e(TAG, "No biometric hardware available.")
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> Log.e(TAG, "Biometric features are currently unavailable.")

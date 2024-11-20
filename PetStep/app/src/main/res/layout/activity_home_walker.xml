@@ -57,7 +57,6 @@
         android:layout_marginTop="10dp"
         android:layout_marginEnd="32dp"
         android:background="@android:drawable/editbox_background"
-        android:hint="Chapinero parque el virrey"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -86,7 +85,6 @@
         android:layout_marginTop="10dp"
         android:layout_marginEnd="32dp"
         android:background="@android:drawable/editbox_background"
-        android:hint="37,000COP"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:textAlignment="center"
@@ -133,66 +131,24 @@
 
     </RadioGroup>
 
-    <TextView
-        android:id="@+id/disponibilidadHoras"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="144dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="145dp"
-        android:text="Horario Disponible"
-        android:textSize="20dp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dispoRadioGroup" />
-
-    <TextView
-        android:id="@+id/inicio"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="115dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="20dp"
-        android:background="@android:drawable/editbox_background"
-
-        android:hint="Inicio 7:00"
-        app:layout_constraintEnd_toStartOf="@+id/fin"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/disponibilidadHoras" />
-
-    <TextView
-        android:id="@+id/fin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="115dp"
-        android:hint="fin 14:00"
-        android:background="@android:drawable/editbox_background"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/disponibilidadHoras" />
-
     <ImageView
         android:id="@+id/casa"
         android:layout_width="100dp"
         android:layout_height="81dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="46dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="64dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/inicio"
-        app:layout_constraintVertical_bias="0.489"
         app:srcCompat="@drawable/casa" />
 
     <ImageView
         android:id="@+id/paseo"
         android:layout_width="88dp"
         android:layout_height="82dp"
-        android:layout_marginBottom="46dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginBottom="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/casa"
-        app:layout_constraintTop_toBottomOf="@+id/inicio"
         app:srcCompat="@drawable/paseador" />
 
     <ImageView
@@ -200,23 +156,35 @@
         android:layout_width="88dp"
         android:layout_height="82dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="45dp"
+        android:layout_marginBottom="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fin"
-        app:layout_constraintVertical_bias="0.489"
         app:srcCompat="@drawable/avatar" />
 
     <ImageView
         android:id="@+id/ubiActual"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="46dp"
+        android:layout_marginBottom="56dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/perfil"
+        app:layout_constraintHorizontal_bias="0.368"
         app:layout_constraintStart_toEndOf="@+id/paseo"
-        app:layout_constraintTop_toBottomOf="@+id/fin"
         app:srcCompat="@drawable/baseline_map_24" />
+
+    <Button
+        android:id="@+id/saveInfoButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="56dp"
+        android:backgroundTint="#00BCD4"
+        android:text="Guardar estado"
+        app:layout_constraintBottom_toTopOf="@+id/paseo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.469"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dispoRadioGroup"
+        app:layout_constraintVertical_bias="1.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
