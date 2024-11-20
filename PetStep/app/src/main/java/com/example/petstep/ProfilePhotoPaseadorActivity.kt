@@ -13,6 +13,8 @@ import com.example.petstep.databinding.ActivityProfilePhotoPaseadorBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import java.io.File
 
 class ProfilePhotoPaseadorActivity : AppCompatActivity() {
@@ -22,6 +24,8 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
     private lateinit var userRef: DatabaseReference
+    private lateinit var storage: FirebaseStorage
+    private lateinit var storageRef: StorageReference
 
     private val galleryLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent(), ActivityResultCallback {
@@ -51,7 +55,15 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
+        storage = FirebaseStorage.getInstance()
+        storageRef = storage.reference
         val userId = auth.currentUser?.uid
+        if (userId != null) {
+            userRef = database.getReference("users/paseadores").child(userId)
+        } else {
+            // Handle error: user not logged in
+            finish()
+        }
 
         binding.buttonAbrirGaleria.setOnClickListener {
             galleryLauncher.launch("image/*")
@@ -64,7 +76,11 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
         }
 
         binding.buttonConfirmar.setOnClickListener {
-            startActivity(Intent(baseContext, IniciarSesionActivity::class.java))
+            if (::uri.isInitialized) {
+                sendImageUri(uri)
+            } else {
+                updateUserProfile(null)
+            }
         }
     }
 
@@ -82,8 +98,51 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
     }
 
     private fun sendImageUri(uri: Uri) {
-        val intent = Intent(this, PerfilPaseadorActivity::class.java)
-        intent.putExtra("imageUri", uri.toString())
-        startActivity(intent)
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            val fileRef = storageRef.child("users-photos/walker/$userId.jpg")
+            fileRef.putFile(uri).addOnSuccessListener {
+                fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    userRef.child("profilePhotoUrl").setValue(downloadUri.toString()).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            updateUserProfile(downloadUri.toString())
+                        } else {
+                            // Handle error
+                        }
+                    }
+                }.addOnFailureListener {
+                    // Handle error
+                }
+            }.addOnFailureListener {
+                // Handle error
+            }
+        } else {
+            // Handle error: user not logged in
+        }
+    }
+
+    private fun updateUserProfile(photoUrl: String?) {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            userRef = database.getReference("users/paseadores").child(userId)
+            val userUpdates = mutableMapOf<String, Any>(
+                "nombre" to binding.nombre.text.toString(),
+                "apellido" to binding.apellido.text.toString(),
+                "telefono" to binding.telefono.text.toString()
+            )
+            if (photoUrl != null) {
+                userUpdates["profilePhotoUrl"] = photoUrl
+            }
+            userRef.updateChildren(userUpdates).addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val intent = Intent(this, PerfilPaseadorActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    // Handle error
+                }
+            }
+        } else {
+            // Handle error: user not logged in
+        }
     }
 }
