@@ -83,6 +83,7 @@
         <activity
             android:name=".RegistroActivity"
             android:exported="false" />
+        <activity android:name=".ChatActivity" />
         <activity
             android:name=".IniciarSesionActivity"
             android:exported="true">
