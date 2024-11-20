@@ -4,7 +4,7 @@ package com.example.petstep.model
 import android.os.Parcel
 import android.os.Parcelable
 
-class MyPet(
+data class MyPet(
     var id: String = "",
     var nombre: String = "",
     var raza: String = "",
@@ -45,5 +45,9 @@ class MyPet(
         override fun newArray(size: Int): Array<MyPet?> {
             return arrayOfNulls(size)
         }
+    }
+
+    override fun toString(): String {
+        return nombre ?: "Sin nombre"
     }
 }

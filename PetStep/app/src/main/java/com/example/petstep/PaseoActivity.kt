@@ -38,7 +38,10 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
     private val database = FirebaseDatabase.getInstance()
     private val walkersRef = database.getReference("walkers")
     private val walkers = mutableListOf<Walker>()
-    private val walkersAdapter = WalkersAdapter(walkers) { walker -> sendRequestToWalker(walker) }
+    private val walkersAdapter = WalkersAdapter(walkers) { walker ->
+        // Cambiamos esto para mostrar el diálogo primero
+        showDurationPetPicker(walker.id)
+    }
     private lateinit var userLocation: LatLng
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,23 +125,9 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
             })
     }
 
-    private fun sendRequestToWalker(walker: Walker) {
-        val requestRef = database.getReference("requests")
-        val request = hashMapOf(
-            "ownerId" to FirebaseAuth.getInstance().currentUser!!.uid,
-            "walkerId" to walker.id,
-            "status" to "pending",
-            "timestamp" to ServerValue.TIMESTAMP
-        )
-        
-        requestRef.push().setValue(request)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Solicitud enviada", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Error al enviar solicitud", Toast.LENGTH_SHORT).show()
-            }
-    }
+    /*private fun sendRequestToWalker(walker: Walker) {
+        // Este método ya no se usa
+    }*/
 
     private fun addUserMarker() {
         if (!::googleMap.isInitialized) return
@@ -241,5 +230,50 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14f))
             true
         }
+    }
+
+    private fun showDurationPetPicker(walkerId: String) {
+        DurationPickerDialog(this).apply {
+            onConfirm = { duration, petId ->
+                createWalkRequest(walkerId, duration, petId)
+            }
+            show()
+        }
+    }
+
+    private fun createWalkRequest(walkerId: String, duration: Int, petId: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val requestRef = FirebaseDatabase.getInstance().getReference("walkRequests")
+        val requestId = requestRef.push().key ?: return
+
+        // Get walker's location from walkers list
+        val walker = walkers.find { it.id == walkerId }
+        val distance = walker?.let { 
+            calculateDistance(
+                userLocation,
+                LatLng(it.latitude, it.longitude)
+            )
+        } ?: 0f
+
+        val request = hashMapOf(
+            "id" to requestId,
+            "userId" to userId,
+            "walkerId" to walkerId,
+            "petId" to petId,
+            "duration" to duration,
+            "status" to "pending",
+            "timestamp" to ServerValue.TIMESTAMP,
+            "ownerLat" to userLocation.latitude,
+            "ownerLng" to userLocation.longitude,
+            "distance" to distance
+        )
+
+        requestRef.child(requestId).setValue(request)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Solicitud enviada exitosamente", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al enviar la solicitud", Toast.LENGTH_SHORT).show()
+            }
     }
 }
