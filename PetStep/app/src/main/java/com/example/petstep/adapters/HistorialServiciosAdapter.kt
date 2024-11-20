@@ -10,10 +10,18 @@ import java.util.*
 
 class HistorialServiciosAdapter(
     private val servicios: MutableList<ServicioHistorial>,
-    private val isOwner: Boolean = false
+    private var isOwner: Boolean
 ) : RecyclerView.Adapter<HistorialServiciosAdapter.ViewHolder>() {
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    private val viewPool = RecyclerView.RecycledViewPool()
+
+    fun setIsOwner(value: Boolean) {
+        if (isOwner != value) {
+            isOwner = value
+            notifyDataSetChanged()
+        }
+    }
 
     inner class ViewHolder(private val binding: ItemHistorialServicioBinding) : 
         RecyclerView.ViewHolder(binding.root) {
@@ -30,6 +38,8 @@ class HistorialServiciosAdapter(
                 petNameText.text = "Mascota: ${servicio.petName}"
                 durationText.text = "Duración: ${servicio.duration} min"
                 priceText.text = "Precio: $${String.format("%.2f", servicio.price)}"
+                
+                // Mostrar estado del servicio
                 statusText.text = when(servicio.status) {
                     "completed" -> "Completado"
                     "in_progress" -> "En curso"
@@ -37,31 +47,45 @@ class HistorialServiciosAdapter(
                     else -> servicio.status
                 }
                 
-                // Formatear y mostrar fecha
+                // Mostrar fecha y hora del servicio
                 val date = Date(servicio.timestamp)
                 dateText.text = "Fecha: ${dateFormat.format(date)}"
+                
+                // Si el servicio está completado, mostrar duración real
+                if (servicio.status == "completed" && servicio.endTime > 0) {
+                    val realDuration = (servicio.endTime - servicio.startTime) / 1000 / 60 // convertir a minutos
+                    durationText.text = "Duración real: ${realDuration} min"
+                }
             }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemHistorialServicioBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
+        return ViewHolder(
+            ItemHistorialServicioBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
         )
-        return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(servicios[position])
+        println("DEBUG: Binding service at position $position")
+        val servicio = servicios[position]
+        println("DEBUG: Service details - ID: ${servicio.id}, Owner: ${servicio.ownerName}, Walker: ${servicio.walkerName}")
+        holder.bind(servicio)
     }
 
     override fun getItemCount() = servicios.size
 
     fun updateServicios(newServicios: List<ServicioHistorial>) {
-        servicios.clear()
-        servicios.addAll(newServicios)
+        println("DEBUG: Updating adapter with ${newServicios.size} services")
+        with(servicios) {
+            clear()
+            addAll(newServicios)
+        }
+        println("DEBUG: Services updated, notifying adapter")
         notifyDataSetChanged()
     }
 }
