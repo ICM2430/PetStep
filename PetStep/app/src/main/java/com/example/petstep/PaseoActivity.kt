@@ -44,6 +44,7 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
         showDurationPetPicker(walker.id)
     }
     private lateinit var userLocation: LatLng
+    private lateinit var notificationService: NotificationService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +62,7 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
         setupMap()
         setupRecyclerView()
         loadAvailableWalkers()
+        notificationService = NotificationService(this)
     }
 
     private fun setupRecyclerView() {
@@ -278,7 +280,6 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
         requestRef.child(requestId).setValue(request)
             .addOnSuccessListener {
                 // Send notification
-                val notificationService = NotificationService()
                 FirebaseDatabase.getInstance().getReference("users")
                     .child(userId)
                     .get()

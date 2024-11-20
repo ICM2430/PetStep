@@ -142,14 +142,18 @@ class PeticionesActivity : AppCompatActivity() {
         if (action == "accept") {
             val updates = hashMapOf<String, Any>(
                 "walkRequests/${request.id}/status" to newStatus,
+                // Update walker's active service
                 "users/paseadores/${auth.currentUser!!.uid}/activeServiceId" to request.id,
-                "users/paseadores/${auth.currentUser!!.uid}/activeService" to true
+                "users/paseadores/${auth.currentUser!!.uid}/activeService" to true,
+                // Add owner's active service
+                "users/duenos/${request.userId}/activeServiceId" to request.id,
+                "users/duenos/${request.userId}/activeService" to true
             )
 
             database.reference.updateChildren(updates)
                 .addOnSuccessListener {
                     // Send notification to owner
-                    val notificationService = NotificationService()
+                    val notificationService = NotificationService(this)  // Pass context here
                     database.getReference("users/paseadores/${auth.currentUser!!.uid}")
                         .get()
                         .addOnSuccessListener { walkerSnapshot ->

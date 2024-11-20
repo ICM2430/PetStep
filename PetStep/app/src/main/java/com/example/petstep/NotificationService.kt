@@ -10,12 +10,11 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
-class NotificationService : FirebaseMessagingService() {
+class NotificationService(private val context: Context) {
     private val CHANNEL_ID = "petstep_notifications"
     private val NOTIFICATION_ID = 100
 
-    override fun onCreate() {
-        super.onCreate()
+    init {
         createNotificationChannel()
     }
 
@@ -28,23 +27,23 @@ class NotificationService : FirebaseMessagingService() {
                 description = descriptionText
             }
             val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
 
     fun sendWalkRequestNotification(walkerId: String, ownerName: String) {
-        val intent = Intent(this, PaseoActivity::class.java).apply {
+        val intent = Intent(context, PaseoActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("walkerId", walkerId)
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
+            context, 0, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification) // Make sure to create this icon
             .setContentTitle("Nueva solicitud de paseo")
             .setContentText("$ownerName ha solicitado un paseo")
@@ -52,21 +51,21 @@ class NotificationService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
     fun sendWalkAcceptedNotification(userId: String, walkerName: String) {
-        val intent = Intent(this, RastreoActivity::class.java).apply {
+        val intent = Intent(context, RastreoActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 1, intent,
+            context, 1, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Paseo Aceptado")
             .setContentText("$walkerName ha aceptado tu solicitud de paseo")
@@ -74,21 +73,21 @@ class NotificationService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID + 1, builder.build())
     }
 
     fun sendWalkStartedNotification(userId: String, walkerName: String) {
-        val intent = Intent(this, RastreoActivity::class.java).apply {
+        val intent = Intent(context, RastreoActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 2, intent,
+            context, 2, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Paseo Iniciado")
             .setContentText("$walkerName ha iniciado el paseo")
@@ -96,21 +95,21 @@ class NotificationService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID + 2, builder.build())
     }
 
     fun sendWalkCompletedNotification(userId: String, walkerName: String, distance: Double) {
-        val intent = Intent(this, HistorialServiciosActivity::class.java).apply {
+        val intent = Intent(context, HistorialServiciosActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 3, intent,
+            context, 3, intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Paseo Completado")
             .setContentText("$walkerName ha finalizado el paseo (${String.format("%.2f", distance)} km)")
@@ -118,17 +117,21 @@ class NotificationService : FirebaseMessagingService() {
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID + 3, builder.build())
     }
+}
 
+// Create a separate class for Firebase messaging if needed
+class FirebaseNotificationService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         // Handle token refresh
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        val notificationService = NotificationService(this)
         remoteMessage.notification?.let {
-            sendWalkRequestNotification(
+            notificationService.sendWalkRequestNotification(
                 remoteMessage.data["walkerId"] ?: "",
                 remoteMessage.data["ownerName"] ?: "Usuario"
             )

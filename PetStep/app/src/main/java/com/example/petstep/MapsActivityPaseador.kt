@@ -731,14 +731,16 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
                             "walkRequests/$requestId/totalSteps" to stepCount,
                             "walkRequests/$requestId/elevationStats" to elevationStats,
                             "users/paseadores/${auth.currentUser!!.uid}/activeServiceId" to null,
-                            "users/paseadores/${auth.currentUser!!.uid}/activeService" to false
+                            "users/paseadores/${auth.currentUser!!.uid}/activeService" to false,
+                            "users/duenos/$userId/activeServiceId" to null,
+                            "users/duenos/$userId/activeService" to false
                         )
 
                         database.reference.updateChildren(updates)
                             .addOnSuccessListener {
                                 // Send notification to owner
                                 userId?.let {
-                                    NotificationService().sendWalkCompletedNotification(it, walkerName, totalDistance)
+                                    NotificationService(this).sendWalkCompletedNotification(it, walkerName, totalDistance)
                                 }
                                 
                                 println("DEBUG: Servicio finalizado - Distancia: $totalDistance km")
@@ -828,7 +830,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
                                 
                                 // Send notification to owner
                                 userId?.let {
-                                    NotificationService().sendWalkStartedNotification(it, walkerName)
+                                    NotificationService(this).sendWalkStartedNotification(it, walkerName)
                                 }
                             }
                     }
