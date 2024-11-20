@@ -110,11 +110,25 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
             .get()
             .addOnSuccessListener { snapshot ->
                 serviceStatus = snapshot.child("status").getValue(String::class.java) ?: ""
-                // Cargar la duración en minutos y convertirla a segundos
                 val durationMinutes = snapshot.child("duration").getValue(Int::class.java) ?: 0
-                remainingSeconds = durationMinutes * 60
+                
+                if (serviceStatus == "in_progress") {
+                    val startTime = snapshot.child("startTime").getValue(Long::class.java) ?: 0L
+                    remainingSeconds = calculateRemainingSeconds(startTime, durationMinutes)
+                    startTimer()
+                } else {
+                    remainingSeconds = durationMinutes * 60
+                }
+                
                 updateUIForStatus()
             }
+    }
+
+    private fun calculateRemainingSeconds(startTime: Long, durationMinutes: Int): Int {
+        val currentTime = System.currentTimeMillis()
+        val elapsedSeconds = ((currentTime - startTime) / 1000).toInt()
+        val totalSeconds = durationMinutes * 60
+        return maxOf(0, totalSeconds - elapsedSeconds)
     }
 
     private fun loadPetLocation(requestId: String, onComplete: () -> Unit) {
