@@ -7,7 +7,7 @@ import com.example.petstep.databinding.ActivityPetDetailBinding
 import com.example.petstep.model.MyPet
 import com.squareup.picasso.Picasso
 
-class PetDetailActivity : AppCompatActivity() { 
+class PetDetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPetDetailBinding
 
@@ -17,7 +17,7 @@ class PetDetailActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val pet = intent.getParcelableExtra<MyPet>("pet")
-
+ 
         pet?.let {
             binding.petNameTextView.text = "Nombre: " + it.nombre
             binding.petBreedTextView.text = "Raza: " + it.raza

@@ -1,5 +1,5 @@
 // PetsAdapter.kt
-package com.example.petstep 
+package com.example.petstep
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -26,7 +26,7 @@ class PetsAdapter(
         if (petsList.isEmpty()) {
             return View(context)
         }
-
+ 
         val view: View = convertView ?: LayoutInflater.from(context).inflate(R.layout.item_pet, parent, false)
         val pet = petsList[position]
 

@@ -1,33 +1,40 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- item_pet.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:padding="16dp">
+ 
+    <ImageView
+        android:id="@+id/petPhoto"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginEnd="16dp"
+        android:scaleType="centerCrop"
 
-    <TextView
-        android:id="@+id/petName"
-        android:layout_width="wrap_content"
+        android:src="@drawable/perrito" />
+
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Nombre"/>
+        android:layout_weight="1"
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/petType"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Tipo"/>
+        <TextView
+            android:id="@+id/petName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="perrito"
+            android:textSize="24sp"
+            android:layout_weight="1"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/petAge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Edad"/>
-
-
-    <Button
-        android:id="@+id/deletePetButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#00BCD4"
-        android:text="Eliminar" />
+        <TextView
+            android:id="@+id/petBreed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="raza"
+            android:layout_weight="1"
+            android:textSize="24sp" />
+    </LinearLayout>
 </LinearLayout>
