@@ -52,6 +52,7 @@ class HomeWalkerActivity : AppCompatActivity() {
         fetchUserData()
     }
 
+
     private fun setupNavigation() {
         binding.casa.setOnClickListener {
             startActivity(Intent(this, HomeWalkerActivity::class.java))
@@ -66,8 +67,28 @@ class HomeWalkerActivity : AppCompatActivity() {
         }
 
         binding.ubiActual.setOnClickListener {
-            startActivity(Intent(this, MapsActivityPaseador::class.java))
+            checkAndLaunchMapActivity()
         }
+    }
+
+    private fun checkAndLaunchMapActivity() {
+        val userId = auth.currentUser?.uid ?: return
+        database.getReference("users/paseadores/$userId").get()
+            .addOnSuccessListener { snapshot ->
+                val activeService = snapshot.child("activeService").getValue(Boolean::class.java) ?: false
+                val activeServiceId = snapshot.child("activeServiceId").getValue(String::class.java)
+
+                if (activeService && !activeServiceId.isNullOrEmpty()) {
+                    val intent = Intent(this, MapsActivityPaseador::class.java)
+                    intent.putExtra("requestId", activeServiceId)
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this, "No hay servicio activo", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al verificar servicio activo", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun setupPlacesAutocomplete() {
