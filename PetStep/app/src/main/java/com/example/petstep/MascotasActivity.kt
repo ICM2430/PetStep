@@ -23,7 +23,7 @@ class MascotasActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMascotasBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.buttonAgregarMascota.setOnClickListener {
+        binding.buttonAgregarMascota.setOnClickListener { 
             startActivity(Intent(baseContext, AddPetActivity::class.java))
         }
 
