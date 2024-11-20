@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/walkerImage"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginEnd="8dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <TextView
+        android:id="@+id/walkerName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Nombre del Paseador"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@id/walkerImage"
+        app:layout_constraintTop_toTopOf="@id/walkerImage"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Precio por Hora -->
+    <TextView
+        android:id="@+id/walkerPrice"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Precio por hora"
+        app:layout_constraintStart_toStartOf="@id/walkerName"
+        app:layout_constraintTop_toBottomOf="@id/walkerName"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/walkerDistance"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Distancia"
+        app:layout_constraintStart_toStartOf="@id/walkerName"
+        app:layout_constraintTop_toBottomOf="@id/walkerPrice"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

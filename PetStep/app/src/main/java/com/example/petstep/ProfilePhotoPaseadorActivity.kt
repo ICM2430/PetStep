@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -14,7 +15,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
 import java.io.File
 
 class ProfilePhotoPaseadorActivity : AppCompatActivity() {
@@ -24,8 +24,6 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var database: FirebaseDatabase
     private lateinit var userRef: DatabaseReference
-    private lateinit var storage: FirebaseStorage
-    private lateinit var storageRef: StorageReference
 
     private val galleryLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent(), ActivityResultCallback {
@@ -55,15 +53,7 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance()
-        storage = FirebaseStorage.getInstance()
-        storageRef = storage.reference
         val userId = auth.currentUser?.uid
-        if (userId != null) {
-            userRef = database.getReference("users/paseadores").child(userId)
-        } else {
-            // Handle error: user not logged in
-            finish()
-        }
 
         binding.buttonAbrirGaleria.setOnClickListener {
             galleryLauncher.launch("image/*")
@@ -76,11 +66,7 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
         }
 
         binding.buttonConfirmar.setOnClickListener {
-            if (::uri.isInitialized) {
-                sendImageUri(uri)
-            } else {
-                updateUserProfile()
-            }
+            startActivity(Intent(baseContext, IniciarSesionActivity::class.java))
         }
     }
 
@@ -98,54 +84,26 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
     }
 
     private fun sendImageUri(uri: Uri) {
-        val userId = auth.currentUser?.uid
-        if (userId != null) {
-            val fileRef = storageRef.child("users-photos/walker/$userId.jpg")
-            fileRef.putFile(uri).addOnSuccessListener {
-                fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                    userRef.child("profilePhotoUrl").setValue(downloadUri.toString()).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            updateUserProfile(downloadUri.toString())
-                        } else {
-                            // Handle error
-                        }
-                    }
-                }.addOnFailureListener {
-                    // Handle error
-                }
-            }.addOnFailureListener {
-                // Handle error
-            }
-        } else {
-            // Handle error: user not logged in
-        }
+        uploadImageToFirebase(uri)
+        val intent = Intent(this, PerfilPaseadorActivity::class.java)
+        startActivity(intent)
     }
 
-    private fun updateUserProfile(photoUrl: String? = null) {
-        val userId = auth.currentUser?.uid
-        if (userId != null) {
-            userRef = database.getReference("users/paseadores").child(userId)
-            val userUpdates = mutableMapOf<String, Any>()
-            if (binding.nombre.text.isNotEmpty()) userUpdates["nombre"] = binding.nombre.text.toString()
-            if (binding.apellido.text.isNotEmpty()) userUpdates["apellido"] = binding.apellido.text.toString()
-            if (binding.telefono.text.isNotEmpty()) userUpdates["telefono"] = binding.telefono.text.toString()
-            if (photoUrl != null) userUpdates["profilePhotoUrl"] = photoUrl
 
-            if (userUpdates.isNotEmpty()) {
-                userRef.updateChildren(userUpdates).addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        val intent = Intent(this, PerfilPaseadorActivity::class.java)
-                        startActivity(intent)
-                    } else {
-                        // Handle error
-                    }
+    private fun uploadImageToFirebase(uri: Uri) {
+        val userId = auth.currentUser?.uid ?: return
+        val storageRef = FirebaseStorage.getInstance().reference.child("profilePhotos/$userId.jpg")
+
+        storageRef.putFile(uri)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    saveImageUri(downloadUri)
+                    Toast.makeText(this, "Imagen subida exitosamente.", Toast.LENGTH_SHORT).show()
                 }
-            } else {
-                val intent = Intent(this, PerfilPaseadorActivity::class.java)
-                startActivity(intent)
             }
-        } else {
-            // Handle error: user not logged in
-        }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al subir la imagen.", Toast.LENGTH_SHORT).show()
+            }
     }
+
 }
