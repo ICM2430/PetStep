@@ -103,7 +103,7 @@
         android:layout_marginTop="12dp"
         android:layout_marginRight="35dp"
         android:backgroundTint="#38CADD"
-        android:text="Añadir Foto de Perfil"
+        android:text="Editar Perfil"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/numeroEditar" />
