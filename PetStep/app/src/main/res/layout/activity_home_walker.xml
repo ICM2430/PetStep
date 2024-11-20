@@ -49,16 +49,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView6" />
 
-    <EditText
-        android:id="@+id/zonaa"
+    <fragment
+        android:id="@+id/autocomplete_fragment"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginStart="32dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="32dp"
-        android:background="@android:drawable/editbox_background"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/zonaT" />
@@ -75,7 +73,7 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/zonaa" />
+        app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment" />
 
     <EditText
         android:id="@+id/precioCop"
