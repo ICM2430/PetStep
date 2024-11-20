@@ -17,8 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "MAPS_API_KEY", "\"${findProperty("MAPS_API_KEY") ?: ""}\"")
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
     buildTypes {
@@ -68,6 +70,7 @@ dependencies {
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.android.libraries.places:places:3.3.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
