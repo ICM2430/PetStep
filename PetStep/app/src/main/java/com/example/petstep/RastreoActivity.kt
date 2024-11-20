@@ -1,5 +1,6 @@
 package com.example.petstep
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -17,7 +18,7 @@ class RastreoActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.button4.setOnClickListener{
-
+            startActivity(Intent(baseContext,ChatActivity::class.java))
         }
     }
 }
