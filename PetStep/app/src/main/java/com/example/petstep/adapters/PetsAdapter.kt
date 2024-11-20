@@ -9,15 +9,12 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import com.example.petstep.model.MyPet
-import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 
 class PetsAdapter(
     private val context: Context,
-    private val petsList: List<MyPet>
+    private var petsList: List<MyPet>
 ) : BaseAdapter() {
-
-    private val storage = FirebaseStorage.getInstance()
 
     override fun getCount(): Int = petsList.size
 
@@ -26,6 +23,10 @@ class PetsAdapter(
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        if (petsList.isEmpty()) {
+            return View(context)
+        }
+
         val view: View = convertView ?: LayoutInflater.from(context).inflate(R.layout.item_pet, parent, false)
         val pet = petsList[position]
 
@@ -34,16 +35,20 @@ class PetsAdapter(
         val petBreedTextView = view.findViewById<TextView>(R.id.petBreed)
 
         // Load the pet photo from Firebase Storage
-        val photoRef = storage.getReferenceFromUrl(pet.photoUrl)
-        photoRef.downloadUrl.addOnSuccessListener { uri ->
-            Picasso.get().load(uri).placeholder(R.drawable.perrito).into(petPhotoImageView)
-        }.addOnFailureListener {
-            petPhotoImageView.setImageResource(R.drawable.perrito)
+        if (pet.photoUrl.isNotEmpty()) {
+            Picasso.get().load(pet.photoUrl).into(petPhotoImageView)
+        } else {
+            petPhotoImageView.setImageResource(0) // No image
         }
 
         petNameTextView.text = pet.nombre
         petBreedTextView.text = pet.raza
 
         return view
+    }
+
+    fun updatePetsList(newPetsList: List<MyPet>) {
+        petsList = newPetsList
+        notifyDataSetChanged()
     }
 }
