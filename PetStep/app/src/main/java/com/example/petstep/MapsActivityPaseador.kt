@@ -18,8 +18,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.database.FirebaseDatabase  // Añadir este import
 
 class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
 
@@ -28,7 +27,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var currentMarker: Marker? = null
-    private val db = FirebaseFirestore.getInstance()
+    private val database = FirebaseDatabase.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,13 +41,18 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         // Initialize FusedLocationProviderClient
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        val serviceId = intent.getStringExtra("REQUEST_ID") ?: run {
-            Toast.makeText(this, "ID de servicio no encontrado", Toast.LENGTH_SHORT).show()
+        val requestId = intent.getStringExtra("requestId") ?: run {
+            Toast.makeText(this, "ID de solicitud no encontrado", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        startLocationUpdates(serviceId)
+        startLocationUpdates(requestId)
+
+        // Agregar botón para finalizar servicio
+        binding.finishServiceButton.setOnClickListener {
+            finishService(requestId)
+        }
     }
 
     override fun onMapReady(map: GoogleMap) {
@@ -101,15 +105,33 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
     }
 
-    private fun updateLocationInFirebase(location: Location, serviceId: String) {
-        val geoPoint = GeoPoint(location.latitude, location.longitude)
-        db.collection("requests").document(serviceId)
-            .update("location", geoPoint)
-            .addOnSuccessListener {
-                Log.d(TAG, "Ubicación actualizada en Firebase.")
-            }
+    private fun updateLocationInFirebase(location: Location, requestId: String) {
+        val locationData = mapOf(
+            "latitude" to location.latitude,
+            "longitude" to location.longitude,
+            "timestamp" to System.currentTimeMillis()
+        )
+        
+        database.getReference("active_services")
+            .child(requestId)
+            .child("currentLocation")
+            .setValue(locationData)
             .addOnFailureListener { e ->
                 Log.e(TAG, "Error al actualizar ubicación: ", e)
+            }
+    }
+
+    private fun finishService(requestId: String) {
+        database.getReference("requests")
+            .child(requestId)
+            .child("status")
+            .setValue("completed")
+            .addOnSuccessListener {
+                Toast.makeText(this, "Servicio finalizado", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al finalizar servicio", Toast.LENGTH_SHORT).show()
             }
     }
 

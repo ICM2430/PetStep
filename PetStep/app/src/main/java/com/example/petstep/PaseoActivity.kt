@@ -26,6 +26,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ServerValue
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import android.location.Location
 
 class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -37,15 +39,22 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
     private val walkersRef = database.getReference("walkers")
     private val walkers = mutableListOf<Walker>()
     private val walkersAdapter = WalkersAdapter(walkers) { walker -> sendRequestToWalker(walker) }
+    private lateinit var userLocation: LatLng
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPaseoBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        userLocation = LatLng(
+            intent.getDoubleExtra("USER_LAT", 0.0),
+            intent.getDoubleExtra("USER_LNG", 0.0)
+        )
         
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         checkLocationPermission()
         
+        setupMap()
         setupRecyclerView()
         loadAvailableWalkers()
     }
@@ -63,19 +72,46 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     walkers.clear()
                     for (walkerSnapshot in snapshot.children) {
-                        val walker = walkerSnapshot.getValue(Walker::class.java)
-                        walker?.let {
-                            it.id = walkerSnapshot.key ?: ""
-                            walkers.add(it)
-                            addWalkerMarkerToMap(it)
-                        }
+                        val walkerId = walkerSnapshot.key ?: continue
+                        val walkerBasicInfo = walkerSnapshot.getValue(Walker::class.java) ?: continue
+                        
+                        // Fetch additional walker information from users/paseadores node
+                        database.getReference("users/paseadores/$walkerId")
+                            .get()
+                            .addOnSuccessListener { userSnapshot ->
+                                val walker = Walker(
+                                    id = walkerId,
+                                    available = walkerBasicInfo.available,
+                                    precioPorHora = walkerBasicInfo.precioPorHora,
+                                    workZone = walkerBasicInfo.workZone,
+                                    latitude = walkerSnapshot.child("workZoneLat").getValue(Double::class.java) ?: 0.0,
+                                    longitude = walkerSnapshot.child("workZoneLng").getValue(Double::class.java) ?: 0.0,
+                                    nombre = userSnapshot.child("nombre").getValue(String::class.java) ?: "",
+                                    apellido = userSnapshot.child("apellido").getValue(String::class.java) ?: "",
+                                    profilePhotoUrl = userSnapshot.child("profilePhotoUrl").getValue(String::class.java) ?: ""
+                                )
+                                
+                                // Calculate distance
+                                val walkerLocation = LatLng(walker.latitude, walker.longitude)
+                                walker.distancia = calculateDistance(userLocation, walkerLocation).toDouble()
+                                
+                                // Add to list and update UI
+                                walkers.add(walker)
+                                walkers.sortBy { it.distancia }
+                                walkersAdapter.notifyDataSetChanged()
+                                
+                                // Update map markers
+                                googleMap.clear()
+                                addUserMarker()
+                                walkers.forEach { addWalkerMarkerToMap(it) }
+                            }
                     }
-                    if (walkers.isEmpty()) {
+                    
+                    if (snapshot.children.count() == 0) {
                         Toast.makeText(this@PaseoActivity, 
                             "No hay paseadores disponibles", 
                             Toast.LENGTH_SHORT).show()
                     }
-                    walkersAdapter.notifyDataSetChanged()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -104,13 +140,33 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
             }
     }
 
+    private fun addUserMarker() {
+        if (!::googleMap.isInitialized) return
+        googleMap.addMarker(MarkerOptions()
+            .position(userLocation)
+            .title("Tu ubicación")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)))
+    }
+
     private fun addWalkerMarkerToMap(walker: Walker) {
         if (!::googleMap.isInitialized) return
-        val location = LatLng(walker.latitude, walker.longitude)
+        
+        val walkerLocation = LatLng(walker.latitude, walker.longitude)
         googleMap.addMarker(MarkerOptions()
-            .position(location)
-            .title("Paseador: ${walker.nombre}"))
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 10f))
+            .position(walkerLocation)
+            .title("${walker.nombre} - %.2f km".format(walker.distancia))
+            .snippet("$${walker.precioPorHora}/hora")
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)))
+    }
+
+    private fun calculateDistance(start: LatLng, end: LatLng): Float {
+        val results = FloatArray(1)
+        Location.distanceBetween(
+            start.latitude, start.longitude,
+            end.latitude, end.longitude,
+            results
+        )
+        return results[0] / 1000 // Convert to kilometers
     }
 
     private fun checkLocationPermission() {
@@ -153,21 +209,37 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            googleMap.isMyLocationEnabled = true
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    val currentLatLng = LatLng(it.latitude, it.longitude)
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
-                }
-            }
+        
+        // Configurar controles del mapa
+        googleMap.uiSettings.apply {
+            isZoomControlsEnabled = true  // Mostrar controles de zoom
+            isZoomGesturesEnabled = true  // Permitir gestos de zoom
+            isScrollGesturesEnabled = true // Permitir scroll/pan
+            isRotateGesturesEnabled = true // Permitir rotación
+            isCompassEnabled = true       // Mostrar brújula
+            isMyLocationButtonEnabled = true // Botón para centrar en ubicación
         }
-        for (walker in walkers) {
+        
+        // Centrar mapa en ubicación del usuario
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14f))
+        
+        // Añadir marcador del usuario
+        addUserMarker()
+        
+        if (ActivityCompat.checkSelfPermission(this, 
+            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            googleMap.isMyLocationEnabled = true
+        }
+        
+        // Cargar marcadores de paseadores existentes
+        walkers.forEach { walker ->
             addWalkerMarkerToMap(walker)
+        }
+        
+        // Listener para cuando se presiona el botón de ubicación
+        googleMap.setOnMyLocationButtonClickListener {
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 14f))
+            true
         }
     }
 }
