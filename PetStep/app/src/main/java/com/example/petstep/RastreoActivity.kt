@@ -76,12 +76,13 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Primero hacer una consulta simple para verificar la conexión
         database.getReference("walkRequests")
-            .orderByChild("walkerId")
-            .equalTo(walkerId)
             .get()
             .addOnSuccessListener { snapshot ->
-                Log.d(TAG, "🔵 Consulta inicial - documentos encontrados: ${snapshot.childrenCount}")
-                snapshot.children.forEach { child ->
+                val matchingRequests = snapshot.children.filter { 
+                    it.child("walkerId").getValue(String::class.java) == walkerId 
+                }
+                Log.d(TAG, "🔵 Consulta inicial - documentos encontrados: ${matchingRequests.size}")
+                matchingRequests.forEach { child ->
                     Log.d(TAG, "📄 Documento encontrado - ID: ${child.key}")
                     Log.d(TAG, "📄 Status: ${child.child("status").value}")
                     Log.d(TAG, "📄 Data: ${child.value}")
@@ -108,27 +109,47 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.d(TAG, "🎯 Iniciando escucha de servicio para walkerId: $walkerId")
         
         database.getReference("walkRequests")
-            .orderByChild("walkerId")
-            .equalTo(walkerId)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (!snapshot.exists()) {
-                        Log.d(TAG, "⚠️ No se encontraron documentos activos")
+                        Log.d(TAG, "⚠️ No se encontraron documentos")
                         return
                     }
 
-                    snapshot.children.forEach { child ->
-                        val status = child.child("status").getValue(String::class.java)
-                        if (status == "accepted" || status == "in_progress") {
-                            processServiceUpdate(child)
+                    snapshot.children
+                        .filter { it.child("walkerId").getValue(String::class.java) == walkerId }
+                        .filter { child ->
+                            val status = child.child("status").getValue(String::class.java)
+                            status == "accepted" || status == "in_progress"
                         }
-                    }
+                        .forEach { processServiceUpdate(it) }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                     Log.e(TAG, "❌ Error escuchando cambios: ${error.message}")
                 }
             })
+    }
+
+    private fun loadServiceStatus() {
+        Log.d(TAG, "loadServiceStatus - Buscando servicio activo para walkerId: $walkerId")
+        Toast.makeText(this, "Cargando servicio...", Toast.LENGTH_SHORT).show()
+
+        database.getReference("walkRequests")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                snapshot.children
+                    .filter { it.child("walkerId").getValue(String::class.java) == walkerId }
+                    .filter { child ->
+                        val status = child.child("status").getValue(String::class.java)
+                        status == "accepted" || status == "in_progress"
+                    }
+                    .forEach { processServiceUpdate(it) }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "❌ Error en consulta inicial: ${e.message}")
+                Toast.makeText(this, "Error al consultar la base de datos", Toast.LENGTH_LONG).show()
+            }
     }
 
     // Single implementation of processServiceUpdate
@@ -230,40 +251,83 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        startTracking()
+        
+        // Set default position (e.g. Mexico City)
+        val defaultPosition = LatLng(19.4326, -99.1332)
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPosition, 12f))
+        
+        // Initialize empty polyline
+        polyline = googleMap.addPolyline(
+            PolylineOptions()
+                .color(Color.RED)
+                .width(5f)
+        )
+        
+        // Load existing data if available
+        loadServiceStatus()
     }
 
-    private fun loadServiceStatus() {
-        Log.d(TAG, "loadServiceStatus - Buscando servicio activo para walkerId: $walkerId")
-        Toast.makeText(this, "Cargando servicio...", Toast.LENGTH_SHORT).show()
+    private fun startTracking() {
+        if (!::googleMap.isInitialized) {
+            Log.e(TAG, "Map not initialized")
+            return
+        }
 
-        database.getReference("walkRequests")
-            .orderByChild("walkerId")
-            .equalTo(walkerId)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (!snapshot.exists()) {
-                        Log.d(TAG, "⚠️ No se encontraron documentos activos")
-                        return
-                    }
+        try {
+            val boundsBuilder = LatLngBounds.builder()
+            var hasValidMarker = false
+            
+            petMarker?.position?.let { 
+                boundsBuilder.include(it)
+                hasValidMarker = true
+                Log.d(TAG, "Added pet marker to bounds: $it")
+            }
+            
+            walkerMarker?.position?.let { 
+                boundsBuilder.include(it)
+                hasValidMarker = true
+                Log.d(TAG, "Added walker marker to bounds: $it")
+            }
 
-                    snapshot.children.forEach { child ->
-                        val status = child.child("status").getValue(String::class.java)
-                        if (status == "accepted" || status == "in_progress") {
-                            processServiceUpdate(child)
+            if (hasValidMarker) {
+                val bounds = boundsBuilder.build()
+                val padding = resources.getDimensionPixelSize(R.dimen.map_padding)
+                Log.d(TAG, "Adjusting camera with bounds and padding: $padding")
+                
+                googleMap.animateCamera(
+                    CameraUpdateFactory.newLatLngBounds(bounds, padding),
+                    1000,  // 1 second duration
+                    object : GoogleMap.CancelableCallback {
+                        override fun onFinish() {
+                            Log.d(TAG, "Camera animation completed")
+                        }
+                        override fun onCancel() {
+                            Log.d(TAG, "Camera animation cancelled")
                         }
                     }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e(TAG, "❌ Error escuchando cambios: ${error.message}")
-                }
-            })
+                )
+            } else {
+                Log.d(TAG, "No valid markers, using default position")
+                // Default to a central location with wider zoom if no markers
+                val defaultPosition = LatLng(19.4326, -99.1332)
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPosition, 8f))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adjusting map bounds: ${e.message}")
+            val defaultPosition = LatLng(19.4326, -99.1332)
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPosition, 8f))
+        }
     }
 
     private fun updateUIWithServiceData(serviceData: ServiceData) {
         serviceStatus = serviceData.status
         updateUIVisibility(serviceData.status)
+
+        // Calculate map center between walker and pet locations
+        val mapCenter = calculateMapCenter(
+            serviceData.ownerLat, serviceData.ownerLng,
+            serviceData.walkerLat, serviceData.walkerLng
+        )
 
         if (serviceData.ownerLat != null && serviceData.ownerLng != null) {
             val petLocation = LatLng(serviceData.ownerLat, serviceData.ownerLng)
@@ -275,178 +339,57 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
             updateWalkerLocation(walkerLocation)
         }
 
-        if (serviceStatus == "in_progress") {
-            loadWalkData(serviceData.id)
+        // Center map after markers are placed
+        mapCenter?.let { center ->
+            val zoom = calculateZoomLevel(
+                serviceData.ownerLat, serviceData.ownerLng,
+                serviceData.walkerLat, serviceData.walkerLng
+            )
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(center, zoom))
         }
-    }
 
-    private fun updateUIVisibility(status: String) {
-        Log.d(TAG, "Actualizando UI para status: $status")
-        when (status) {
+        when (serviceData.status) {
             "accepted" -> {
-                binding.stepCounter.visibility = View.GONE
-                binding.tempCounter.visibility = View.VISIBLE
-                binding.elevationCard.visibility = View.VISIBLE
+                if (serviceData.walkerLat != null && serviceData.walkerLng != null &&
+                    serviceData.ownerLat != null && serviceData.ownerLng != null) {
+                    val walkerLocation = LatLng(serviceData.walkerLat, serviceData.walkerLng)
+                    val petLocation = LatLng(serviceData.ownerLat, serviceData.ownerLng)
+                    getDirectionsToLocation(walkerLocation, petLocation)
+                }
             }
             "in_progress" -> {
-                binding.stepCounter.visibility = View.VISIBLE
-                binding.tempCounter.visibility = View.VISIBLE
-                binding.elevationCard.visibility = View.VISIBLE
-            }
-            else -> {
-                binding.stepCounter.visibility = View.GONE
-                binding.tempCounter.visibility = View.GONE
-                binding.elevationCard.visibility = View.GONE
+                loadWalkData(serviceData.id)
             }
         }
     }
 
-    private fun trackWalkerLocation(requestId: String) {
-        Log.d(TAG, "Iniciando seguimiento de ubicación para requestId: $requestId")
-        database.getReference("walkRequests").child(requestId)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val walkerLat = snapshot.child("paseadorLat").getValue(Double::class.java)
-                    val walkerLng = snapshot.child("paseadorLng").getValue(Double::class.java)
-                    Log.d(TAG, "Nueva ubicación del paseador - Lat: $walkerLat, Lng: $walkerLng")
-
-                    if (walkerLat != null && walkerLng != null) {
-                        val walkerLatLng = LatLng(walkerLat, walkerLng)
-                        updateWalkerLocation(walkerLatLng)
-
-                        if (serviceStatus == "accepted") {
-                            Log.d(TAG, "Calculando ruta hacia la mascota")
-                            petMarker?.position?.let { petPos ->
-                                getDirectionsToLocation(walkerLatLng, petPos)
-                            }
-                        }
-                    } else {
-                        Log.e(TAG, "Ubicación del paseador no válida")
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e(TAG, "Error al seguir ubicación: ${error.message}")
-                }
-            })
-    }
-
-    private fun loadWalkData(requestId: String) {
-        Log.d(TAG, "Cargando datos del paseo para requestId: $requestId")
-        
-        val stepsRef = database.getReference("walkRequests").child(requestId).child("steps")
-        val tempRef = database.getReference("walkRequests").child(requestId).child("temperature")
-        
-        deferredInitializer.launch {
-            try {
-                // Modificar para manejar los tipos correctamente
-                val steps = loadSteps(stepsRef)
-                val temp = loadTemperature(tempRef)
-                val elevation = loadElevation(requestId)
-                val route = loadRoute(requestId)
-
-                withContext(Dispatchers.Main) {
-                    updateUIWithWalkData(steps, temp, elevation, route)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading walk data: ${e.message}")
-            }
-        }
-    }
-
-    private suspend fun loadSteps(stepsRef: DatabaseReference): Long {
-        val snapshot = stepsRef.orderByKey().limitToLast(1).get().await()
-        return snapshot.children.firstOrNull()?.child("steps")?.getValue(Long::class.java) ?: 0L
-    }
-
-    private suspend fun loadTemperature(tempRef: DatabaseReference): Double {
-        val snapshot = tempRef.orderByKey().limitToLast(1).get().await()
-        return snapshot.children.firstOrNull()?.child("temperature")?.getValue(Double::class.java) ?: 0.0
-    }
-
-    private suspend fun loadElevation(requestId: String): List<Entry> {
-        val snapshot = database.getReference("walkRequests")
-            .child(requestId)
-            .child("elevationHistory")
-            .orderByKey()
-            .get()
-            .await()
-        
-        return snapshot.children.mapNotNull { doc ->
-            val time = doc.child("timeSeconds").getValue(Double::class.java)?.toFloat()
-            val elevation = doc.child("elevation").getValue(Double::class.java)?.toFloat()
-            if (time != null && elevation != null) {
-                Entry(time, elevation)
-            } else null
-        }
-    }
-
-    private suspend fun loadRoute(requestId: String): List<LatLng> {
-        val snapshot = database.getReference("walkRequests")
-            .child(requestId)
-            .child("route")
-            .orderByKey()
-            .get()
-            .await()
-        
-        return snapshot.children.mapNotNull { doc ->
-            val lat = doc.child("latitude").getValue(Double::class.java)
-            val lng = doc.child("longitude").getValue(Double::class.java)
-            if (lat != null && lng != null) {
-                LatLng(lat, lng)
-            } else null
-        }
-    }
-
-    private fun updateUIWithWalkData(steps: Long, temp: Double, elevation: List<Entry>, route: List<LatLng>) {
-        binding.stepCounter.text = "Steps: $steps"
-        binding.tempCounter.text = String.format("Temp: %.1f°C", temp)
-        updateElevationChart(elevation)
-        routePoints.clear()
-        routePoints.addAll(route)
-        drawWalkingRoute()
-    }
-
-    private fun updateElevationChart(entries: List<Entry>) {
-        val dataSet = LineDataSet(entries, "Elevación").apply {
-            color = Color.BLUE
-            setDrawCircles(false)
-            setDrawValues(false)
-            lineWidth = 2f
-            mode = LineDataSet.Mode.CUBIC_BEZIER
-            cubicIntensity = 0.2f
-            setDrawFilled(true)
-            fillAlpha = 50
-            fillColor = Color.BLUE
-        }
-
-        elevationChart.data = LineData(dataSet)
-        
-        // Adjust Y axis range
-        val yMin = dataSet.yMin
-        val yMax = dataSet.yMax
-        val yPadding = 2f
-        
-        elevationChart.axisLeft.apply {
-            axisMinimum = (yMin - yPadding).coerceAtMost(-2f)
-            axisMaximum = (yMax + yPadding).coerceAtLeast(2f)
+    private fun calculateMapCenter(ownerLat: Double?, ownerLng: Double?, 
+                                 walkerLat: Double?, walkerLng: Double?): LatLng? {
+        if (ownerLat == null || ownerLng == null || walkerLat == null || walkerLng == null) {
+            return null
         }
         
-        elevationChart.invalidate()
+        val centerLat = (ownerLat + walkerLat) / 2
+        val centerLng = (ownerLng + walkerLng) / 2
+        return LatLng(centerLat, centerLng)
     }
 
-    private fun startTracking() {
-        val bounds = LatLngBounds.builder()
-        if (petMarker?.position != null) {
-            bounds.include(petMarker!!.position)
+    private fun calculateZoomLevel(ownerLat: Double?, ownerLng: Double?,
+                                 walkerLat: Double?, walkerLng: Double?): Float {
+        if (ownerLat == null || ownerLng == null || walkerLat == null || walkerLng == null) {
+            return 12f
         }
-        if (walkerMarker?.position != null) {
-            bounds.include(walkerMarker!!.position)
-        }
-        try {
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 100))
-        } catch (e: Exception) {
-            Log.e("RastreoActivity", "Error adjusting map bounds: ${e.message}")
+
+        val latDiff = Math.abs(ownerLat - walkerLat)
+        val lngDiff = Math.abs(ownerLng - walkerLng)
+        val maxDiff = Math.max(latDiff, lngDiff)
+
+        return when {
+            maxDiff > 10 -> 8f    // Very far apart
+            maxDiff > 5 -> 10f    // Far apart
+            maxDiff > 1 -> 12f    // Medium distance
+            maxDiff > 0.1 -> 14f  // Closer
+            else -> 16f           // Very close
         }
     }
 
@@ -465,29 +408,36 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun updateWalkerLocation(location: LatLng) {
-        Log.d(TAG, "Actualizando ubicación del paseador: ${location.latitude}, ${location.longitude}")
-        if (walkerMarker == null) {
-            walkerMarker = googleMap.addMarker(
-                MarkerOptions()
-                    .position(location)
-                    .title("Paseador")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-            )
-        } else {
-            walkerMarker?.position = location
+        if (!::googleMap.isInitialized) {
+            Log.e(TAG, "Google Map not initialized yet")
+            return
         }
 
-        // Adjust map bounds to show both markers
-        val bounds = LatLngBounds.builder()
-        if (petMarker?.position != null) {
-            bounds.include(petMarker!!.position)
-        }
-        bounds.include(location)
-        
-        try {
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 100))
-        } catch (e: Exception) {
-            Log.e("RastreoActivity", "Error adjusting map bounds: ${e.message}")
+        runOnUiThread {
+            if (walkerMarker == null) {
+                walkerMarker = googleMap.addMarker(
+                    MarkerOptions()
+                        .position(location)
+                        .title("Paseador")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+                )
+            } else {
+                walkerMarker?.position = location
+            }
+
+            // Update camera only if both markers exist
+            if (petMarker != null && walkerMarker != null) {
+                try {
+                    val bounds = LatLngBounds.builder()
+                        .include(petMarker!!.position)
+                        .include(location)
+                        .build()
+                    val padding = resources.getDimensionPixelSize(R.dimen.map_padding)
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating camera: ${e.message}")
+                }
+            }
         }
     }
 
@@ -541,6 +491,196 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun loadWalkData(walkId: String) {
+        Log.d(TAG, "Loading walk data for walkId: $walkId")
+        
+        // Load steps
+        database.getReference("walkRequests")
+            .child(walkId)
+            .child("steps")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var latestSteps = 0L
+                    snapshot.children.forEach { stepData ->
+                        val steps = stepData.child("steps").getValue(Long::class.java) ?: 0L
+                        if (steps > latestSteps) latestSteps = steps
+                    }
+                    binding.stepCounter.text = getString(R.string.step_count_format, latestSteps)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error loading steps: ${error.message}")
+                }
+            })
+        
+        // Load temperature
+        database.getReference("walkRequests")
+            .child(walkId)
+            .child("temperature")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var latestTemp = 0f
+                    try {
+                        snapshot.children.forEach { tempData ->
+                            // Try different ways to get the temperature value
+                            val temp = when {
+                                tempData.child("temperature").getValue(Float::class.java) != null ->
+                                    tempData.child("temperature").getValue(Float::class.java)!!
+                                tempData.child("temperature").getValue(Double::class.java) != null ->
+                                    tempData.child("temperature").getValue(Double::class.java)!!.toFloat()
+                                else -> null
+                            }
+                            
+                            if (temp != null) {
+                                latestTemp = temp
+                                Log.d(TAG, "Temperature read: $latestTemp")
+                            }
+                        }
+                        // Format with one decimal place
+                        binding.tempCounter.text = String.format("Temp: %.1f°C", latestTemp)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing temperature: ${e.message}")
+                        binding.tempCounter.text = "Temp: N/A"
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error loading temperature: ${error.message}")
+                    binding.tempCounter.text = "Temp: N/A"
+                }
+            })
+        
+        // Load elevation history
+        database.getReference("walkRequests")
+            .child(walkId)
+            .child("elevationHistory")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val elevationEntries = mutableListOf<Entry>()
+                    snapshot.children.forEach { elevationData ->
+                        val time = elevationData.child("timeSeconds").getValue(Float::class.java)
+                        val elevation = elevationData.child("elevation").getValue(Float::class.java)
+                        if (time != null && elevation != null) {
+                            elevationEntries.add(Entry(time, elevation))
+                        }
+                    }
+                    
+                    if (elevationEntries.isNotEmpty()) {
+                        // Sort entries by time
+                        elevationEntries.sortBy { it.x }
+                        updateElevationChart(elevationEntries)
+                        
+                        // Update elevation text with latest value
+                        val latestElevation = elevationEntries.last().y
+                        binding.elevationText.text = String.format("Elevación: %.2f m", latestElevation)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error loading elevation data: ${error.message}")
+                }
+            })
+            
+        // Load route
+        loadWalkRoute(walkId)
+    }
+
+    private fun loadWalkRoute(walkId: String) {
+        database.getReference("walkRequests")
+            .child(walkId)
+            .child("route")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    routePoints.clear()
+                    snapshot.children.forEach { point ->
+                        val lat = point.child("latitude").getValue(Double::class.java)
+                        val lng = point.child("longitude").getValue(Double::class.java)
+                        if (lat != null && lng != null) {
+                            routePoints.add(LatLng(lat, lng))
+                        }
+                    }
+                    if (routePoints.isNotEmpty()) {
+                        drawWalkingRoute()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error loading route: ${error.message}")
+                }
+            })
+    }
+
+    private fun updateUIWithWalkData(
+        steps: Long,
+        temperature: Double,
+        elevationPoints: List<Entry>,
+        route: List<LatLng>
+    ) {
+        Log.d(TAG, "Updating UI with walk data - Steps: $steps, Temp: $temperature")
+        
+        try {
+            // Update step counter
+            binding.stepCounter.text = getString(R.string.step_count_format, steps)
+            
+            // Update temperature
+            binding.tempCounter.text = getString(R.string.temperature_format, temperature)
+            
+            // Update elevation chart
+            if (elevationPoints.isNotEmpty()) {
+                updateElevationChart(elevationPoints)
+            }
+            
+            // Update route on map
+            if (route.isNotEmpty()) {
+                routePoints.clear()
+                routePoints.addAll(route)
+                drawWalkingRoute()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating UI with walk data: ${e.message}")
+        }
+    }
+
+    private fun updateElevationChart(entries: List<Entry>) {
+        Log.d(TAG, "Updating elevation chart with ${entries.size} points")
+        
+        try {
+            val dataSet = LineDataSet(entries, "Elevation").apply {
+                color = Color.BLUE
+                setDrawCircles(false)
+                setDrawValues(false)
+                lineWidth = 2f
+                mode = LineDataSet.Mode.CUBIC_BEZIER
+                cubicIntensity = 0.2f
+                setDrawFilled(true)
+                fillAlpha = 50
+                fillColor = Color.BLUE
+            }
+
+            elevationChart.apply {
+                data = LineData(dataSet)
+                
+                // Calculate Y axis range with padding
+                val yMin = entries.minByOrNull { it.y }?.y ?: -1f
+                val yMax = entries.maxByOrNull { it.y }?.y ?: 1f
+                val yRange = yMax - yMin
+                val yPadding = yRange * 0.1f
+                
+                axisLeft.apply {
+                    axisMinimum = yMin - yPadding
+                    axisMaximum = yMax + yPadding
+                }
+                
+                // Refresh the chart
+                invalidate()
+            }
+            
+            Log.d(TAG, "Elevation chart updated successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating elevation chart: ${e.message}")
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         geoApiContext?.shutdown()
@@ -560,4 +700,34 @@ class RastreoActivity : AppCompatActivity(), OnMapReadyCallback {
         val walkerLat: Double?,
         val walkerLng: Double?
     )
+
+    private fun updateUIVisibility(status: String) {
+        Log.d(TAG, "Actualizando visibilidad de UI para status: $status")
+        when (status) {
+            "accepted" -> {
+                binding.apply {
+                    stepCounter.visibility = View.GONE
+                    tempCounter.visibility = View.VISIBLE
+                    elevationChart.visibility = View.GONE
+                    googleMap.uiSettings.isZoomControlsEnabled = true
+                }
+            }
+            "in_progress" -> {
+                binding.apply {
+                    stepCounter.visibility = View.VISIBLE
+                    tempCounter.visibility = View.VISIBLE
+                    elevationChart.visibility = View.VISIBLE
+                    googleMap.uiSettings.isZoomControlsEnabled = true
+                }
+            }
+            else -> {
+                binding.apply {
+                    stepCounter.visibility = View.GONE
+                    tempCounter.visibility = View.GONE
+                    elevationChart.visibility = View.GONE
+                    googleMap.uiSettings.isZoomControlsEnabled = false
+                }
+            }
+        }
+    }
 }

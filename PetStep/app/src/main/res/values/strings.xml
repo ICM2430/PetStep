@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">PetStep</string>
     <string name="title_activity_maps_paseador">MapsActivityPaseador</string>
+    <string name="step_count_format">Steps: %d</string>
+    <string name="temperature_format">Temp: %.1f°C</string>
 </resources>

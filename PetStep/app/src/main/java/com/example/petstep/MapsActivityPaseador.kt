@@ -388,10 +388,10 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
             .child(currentTime.toString())
             .setValue(tempData)
             .addOnSuccessListener {
-                Log.d(TAG, "Temperatura guardada: $currentTemp°C")
+                Log.d(TAG, "Temperature saved successfully: $currentTemp°C at $currentTime")  // Add this line
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Error al guardar temperatura: ", e)
+                Log.e(TAG, "Error saving temperature: ", e)
             }
     }
 
