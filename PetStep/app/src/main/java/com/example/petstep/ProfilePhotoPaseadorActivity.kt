@@ -79,7 +79,7 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
             if (::uri.isInitialized) {
                 sendImageUri(uri)
             } else {
-                updateUserProfile(null)
+                updateUserProfile()
             }
         }
     }
@@ -121,25 +121,28 @@ class ProfilePhotoPaseadorActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateUserProfile(photoUrl: String?) {
+    private fun updateUserProfile(photoUrl: String? = null) {
         val userId = auth.currentUser?.uid
         if (userId != null) {
             userRef = database.getReference("users/paseadores").child(userId)
-            val userUpdates = mutableMapOf<String, Any>(
-                "nombre" to binding.nombre.text.toString(),
-                "apellido" to binding.apellido.text.toString(),
-                "telefono" to binding.telefono.text.toString()
-            )
-            if (photoUrl != null) {
-                userUpdates["profilePhotoUrl"] = photoUrl
-            }
-            userRef.updateChildren(userUpdates).addOnCompleteListener {
-                if (it.isSuccessful) {
-                    val intent = Intent(this, PerfilPaseadorActivity::class.java)
-                    startActivity(intent)
-                } else {
-                    // Handle error
+            val userUpdates = mutableMapOf<String, Any>()
+            if (binding.nombre.text.isNotEmpty()) userUpdates["nombre"] = binding.nombre.text.toString()
+            if (binding.apellido.text.isNotEmpty()) userUpdates["apellido"] = binding.apellido.text.toString()
+            if (binding.telefono.text.isNotEmpty()) userUpdates["telefono"] = binding.telefono.text.toString()
+            if (photoUrl != null) userUpdates["profilePhotoUrl"] = photoUrl
+
+            if (userUpdates.isNotEmpty()) {
+                userRef.updateChildren(userUpdates).addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        val intent = Intent(this, PerfilPaseadorActivity::class.java)
+                        startActivity(intent)
+                    } else {
+                        // Handle error
+                    }
                 }
+            } else {
+                val intent = Intent(this, PerfilPaseadorActivity::class.java)
+                startActivity(intent)
             }
         } else {
             // Handle error: user not logged in
