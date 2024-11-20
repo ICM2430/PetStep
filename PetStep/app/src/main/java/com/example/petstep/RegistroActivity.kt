@@ -91,8 +91,9 @@ class RegistroActivity : AppCompatActivity() {
     private fun registerUser(nombre: String, apellido: String, telefono: String, correo: String, contrasena: String, rol: String) {
         auth.createUserWithEmailAndPassword(correo, contrasena).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                val user = MyUser(nombre, apellido, telefono, correo, contrasena, rol)
                 val userId = auth.currentUser!!.uid
+                val user = MyUser(userId, nombre, apellido, telefono, correo, contrasena, rol)
+
 
                 // Save user to Firestore
                 db.collection("users").document(userId).set(user).addOnSuccessListener {

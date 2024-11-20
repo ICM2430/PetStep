@@ -56,12 +56,18 @@ class PerfilPaseadorActivity : AppCompatActivity() {
                     val apellido = dataSnapshot.child("apellido").getValue(String::class.java) ?: "Last name not available"
                     val correo = dataSnapshot.child("correo").getValue(String::class.java) ?: "Email not available"
                     val telefono = dataSnapshot.child("telefono").getValue(String::class.java) ?: "Phone number not available"
+                    val profilePhotoUrl = dataSnapshot.child("profilePhotoUrl").getValue(String::class.java)
 
                     binding.textViewNombre.text = "$nombre $apellido"
                     binding.textViewCorreo.text = correo
                     binding.textViewTelefono.text = telefono
                     binding.textViewCalificacion.text = "4.9/5"
                     binding.textViewNumServicios.text = "2"
+
+                    if (profilePhotoUrl != null) {
+                        val uri = Uri.parse(profilePhotoUrl)
+                        Glide.with(this@PerfilPaseadorActivity).load(uri).into(binding.imageViewPerfil)
+                    }
                 } else {
                     // Handle case where user data does not exist
                     binding.textViewNombre.text = "Name not available"
@@ -77,11 +83,18 @@ class PerfilPaseadorActivity : AppCompatActivity() {
     }
 
     private fun loadImageUri() {
-        val sharedPreferences = getSharedPreferences("ProfilePhotoPaseadorPrefs", Context.MODE_PRIVATE)
-        val imageUri = sharedPreferences.getString("imageUri", null)
-        if (imageUri != null) {
-            val uri = Uri.parse(imageUri)
-            Glide.with(this).load(uri).into(binding.imageViewPerfil)
-        }
+        userRef.child("profilePhotoUrl").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val imageUri = dataSnapshot.getValue(String::class.java)
+                if (imageUri != null) {
+                    val uri = Uri.parse(imageUri)
+                    Glide.with(this@PerfilPaseadorActivity).load(uri).into(binding.imageViewPerfil)
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Handle database error
+            }
+        })
     }
 }

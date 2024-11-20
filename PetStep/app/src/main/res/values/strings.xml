@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">PetStep</string>
     <string name="title_activity_maps_paseador">MapsActivityPaseador</string>
+    <string name="title_activity_add_pet">AddPetActivity</string>
 </resources>
