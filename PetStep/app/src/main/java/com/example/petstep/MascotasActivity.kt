@@ -1,6 +1,6 @@
 // MascotasActivity.kt
 package com.example.petstep
-//check de fetch 
+
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.petstep.databinding.ActivityMascotasBinding
 import com.example.petstep.model.MyPet
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
 class MascotasActivity : AppCompatActivity() {
@@ -16,6 +17,7 @@ class MascotasActivity : AppCompatActivity() {
     private lateinit var petsAdapter: PetsAdapter
     private lateinit var petsList: MutableList<MyPet>
     private lateinit var database: DatabaseReference
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,28 +31,36 @@ class MascotasActivity : AppCompatActivity() {
         petsAdapter = PetsAdapter(this, petsList)
         binding.listViewMascotas.adapter = petsAdapter
 
-        database = FirebaseDatabase.getInstance().getReference("pets")
+        auth = FirebaseAuth.getInstance()
+        val userId = auth.currentUser?.uid
 
-        database.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val newPetsList = mutableListOf<MyPet>()
-                for (petSnapshot in snapshot.children) {
-                    val pet = petSnapshot.getValue(MyPet::class.java)
-                    if (pet != null) {
-                        newPetsList.add(pet)
+        if (userId != null) {
+            database = FirebaseDatabase.getInstance().getReference("pets")
+            val query = database.orderByChild("userId").equalTo(userId)
+
+            query.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val newPetsList = mutableListOf<MyPet>()
+                    for (petSnapshot in snapshot.children) {
+                        val pet = petSnapshot.getValue(MyPet::class.java)
+                        if (pet != null) {
+                            newPetsList.add(pet)
+                        }
                     }
+                    petsList.clear()
+                    petsList.addAll(newPetsList)
+                    petsAdapter.updatePetsList(petsList)
+                    updateEmptyView()
                 }
-                petsList.clear()
-                petsList.addAll(newPetsList)
-                petsAdapter.updatePetsList(petsList)
-                updateEmptyView()
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-                // Handle possible errors.
-                Toast.makeText(this@MascotasActivity, "Failed to load pets: ${error.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle possible errors.
+                    Toast.makeText(this@MascotasActivity, "Failed to load pets: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        } else {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+        }
 
         binding.listViewMascotas.setOnItemClickListener { _, _, position, _ ->
             if (petsList.isNotEmpty()) {
