@@ -11,5 +11,6 @@ data class Request(
     val status: String = "",
     val timestamp: Long = 0,
     val userId: String = "",
-    val walkerId: String = ""
+    val walkerId: String = "",
+    val price: Double = 0.0  // Añadido price
 )

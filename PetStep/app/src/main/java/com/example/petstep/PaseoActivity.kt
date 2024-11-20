@@ -246,7 +246,7 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
         val requestRef = FirebaseDatabase.getInstance().getReference("walkRequests")
         val requestId = requestRef.push().key ?: return
 
-        // Get walker's location from walkers list
+        // Get walker's location and price from walkers list
         val walker = walkers.find { it.id == walkerId }
         val distance = walker?.let { 
             calculateDistance(
@@ -254,6 +254,11 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
                 LatLng(it.latitude, it.longitude)
             )
         } ?: 0f
+
+        // Calculate price based on duration and hourly rate
+        val pricePerHour = walker?.precioPorHora?.toDouble() ?: 0.0
+        val durationInHours = duration.toDouble() / 60.0
+        val priceForDuration = pricePerHour * durationInHours
 
         val request = hashMapOf(
             "id" to requestId,
@@ -265,12 +270,15 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
             "timestamp" to ServerValue.TIMESTAMP,
             "ownerLat" to userLocation.latitude,
             "ownerLng" to userLocation.longitude,
-            "distance" to distance
+            "distance" to distance,
+            "price" to priceForDuration
         )
 
         requestRef.child(requestId).setValue(request)
             .addOnSuccessListener {
-                Toast.makeText(this, "Solicitud enviada exitosamente", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, 
+                    "Solicitud enviada exitosamente\nPrecio: $${String.format("%.2f", priceForDuration)}", 
+                    Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error al enviar la solicitud", Toast.LENGTH_SHORT).show()

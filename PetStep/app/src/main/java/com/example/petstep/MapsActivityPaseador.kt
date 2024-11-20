@@ -165,10 +165,6 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
                     .title("Ubicación de la mascota")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
             )
-            // Hacer zoom inicial solo si es la primera vez
-            if (currentMarker == null) {
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
-            }
         }
     }
 
@@ -228,6 +224,11 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
                     .position(currentLatLng)
                     .title("Tu ubicación")
             )
+            // Si es la primera ubicación y ya tenemos el marcador de la mascota, ajustar zoom
+            if (isFirstLocation && petMarker != null) {
+                adjustMapZoom()
+                isFirstLocation = false
+            }
         } else {
             currentMarker!!.position = currentLatLng
         }
@@ -336,13 +337,18 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     private fun adjustMapZoom() {
         try {
             val builder = LatLngBounds.Builder()
-            currentMarker?.position?.let { builder.include(it) }
-            petMarker?.position?.let { builder.include(it) }
-            
-            val bounds = builder.build()
-            val padding = 200 // Aumentar el padding para mejor visualización
-            val cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, padding)
-            googleMap.animateCamera(cameraUpdate)
+            if (currentMarker?.position != null && petMarker?.position != null) {
+                builder.include(currentMarker!!.position)
+                builder.include(petMarker!!.position)
+                
+                val bounds = builder.build()
+                val padding = 200 // padding in pixels
+                val cameraUpdate = CameraUpdateFactory.newLatLngBounds(bounds, padding)
+                googleMap.animateCamera(cameraUpdate)
+                Log.d(TAG, "Zoom ajustado para incluir ambos marcadores")
+            } else {
+                Log.d(TAG, "No se pudo ajustar el zoom: faltan marcadores")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error ajustando zoom: ${e.message}")
         }
@@ -387,15 +393,20 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun finishService(requestId: String) {
+        // Calculate total distance from route points
+        val totalDistance = calculateTotalDistance()
+
         val updates = hashMapOf<String, Any?>(
             "walkRequests/$requestId/status" to "completed",
+            "walkRequests/$requestId/endTime" to ServerValue.TIMESTAMP,
+            "walkRequests/$requestId/distance" to totalDistance,
             "users/paseadores/${auth.currentUser!!.uid}/activeServiceId" to null,
             "users/paseadores/${auth.currentUser!!.uid}/activeService" to false
         )
 
         database.reference.updateChildren(updates)
             .addOnSuccessListener {
-                println("DEBUG: Servicio finalizado")
+                println("DEBUG: Servicio finalizado - Distancia: $totalDistance km")
                 Toast.makeText(this, "Servicio finalizado", Toast.LENGTH_SHORT).show()
                 finish()
             }
@@ -403,6 +414,23 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback {
                 println("ERROR: Fallo al finalizar servicio: ${e.message}")
                 Toast.makeText(this, "Error al finalizar servicio", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun calculateTotalDistance(): Double {
+        var totalDistance = 0.0
+        for (i in 0 until routePoints.size - 1) {
+            val results = FloatArray(1)
+            Location.distanceBetween(
+                routePoints[i].latitude,
+                routePoints[i].longitude,
+                routePoints[i + 1].latitude,
+                routePoints[i + 1].longitude,
+                results
+            )
+            totalDistance += results[0]
+        }
+        // Convert to kilometers and round to 3 decimal places
+        return (totalDistance / 1000 * 1000).toInt() / 1000.0
     }
 
     private fun startWalk() {

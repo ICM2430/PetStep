@@ -16,7 +16,9 @@ class RequestsAdapter(
         var ownerName: String = "",
         var petName: String = "",
         var petAge: String = "",
-        var petWeight: String = ""
+        var petWeight: String = "",
+        var price: Double = request.price,  // Cambiar a var
+        var duration: Int = request.duration  // Cambiar a var
     )
 
     inner class ViewHolder(private val binding: ItemRequestBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -32,7 +34,11 @@ class RequestsAdapter(
                 // Mostrar distancia y duración (sin dividir por 1000)
                 val distanceKm = requestWithDetails.request.distance
                 println("DEBUG: Distance in km: $distanceKm")
-                distanceText.text = "Distancia: %.2f km • Duración: ${requestWithDetails.request.duration} min".format(distanceKm)
+                distanceText.text = "Distancia: %.2f km • Duración: %d min • Precio: $%.2f".format(
+                    requestWithDetails.request.distance,
+                    requestWithDetails.duration,
+                    requestWithDetails.price
+                )
                 
                 // Calcular tiempo transcurrido
                 val timeDiff = System.currentTimeMillis() - requestWithDetails.request.timestamp

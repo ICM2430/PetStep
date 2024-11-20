@@ -9,20 +9,18 @@ import com.example.petstep.adapters.RequestsAdapter
 import com.example.petstep.adapters.com.example.petstep.model.Request
 import com.example.petstep.databinding.ActivityPeticionesBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase  // Cambiar a Realtime Database
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.DataSnapshot
-import androidx.recyclerview.widget.DividerItemDecoration  // Añadir este import
-import androidx.recyclerview.widget.RecyclerView  // Añadir este import
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 
 class PeticionesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPeticionesBinding
-    private val database = FirebaseDatabase.getInstance()  // Cambiar a Realtime Database
+    private val database = FirebaseDatabase.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    // Cambiar el tipo de la lista requests
     private val requests = mutableListOf<RequestsAdapter.RequestWithDetails>()
     private val requestsAdapter = RequestsAdapter(requests) { request, action ->
-        // Cambiar para usar el request interno
         handleRequestAction(request.request, action)
     }
 
@@ -43,7 +41,6 @@ class PeticionesActivity : AppCompatActivity() {
             addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
         }
         
-        // Corrección de la sintaxis del observer
         val dataObserver = object : RecyclerView.AdapterDataObserver() {
             override fun onChanged() {
                 super.onChanged()
@@ -55,17 +52,19 @@ class PeticionesActivity : AppCompatActivity() {
     }
 
     private fun loadRequestDetails(request: Request, callback: (RequestsAdapter.RequestWithDetails) -> Unit) {
-        val requestWithDetails = RequestsAdapter.RequestWithDetails(request)
+        val requestWithDetails = RequestsAdapter.RequestWithDetails(
+            request = request,
+            ownerName = "",
+            petName = "",
+            petAge = "",
+            petWeight = ""
+        )
         
-        // Corregir la ruta para incluir "users/duenos"
         database.getReference("users/duenos").child(request.userId)
             .get()
             .addOnSuccessListener { ownerSnapshot ->
-                println("DEBUG: Owner snapshot: ${ownerSnapshot.exists()}")
                 requestWithDetails.ownerName = ownerSnapshot.child("nombre").getValue(String::class.java) ?: "Desconocido"
-                println("DEBUG: Owner name loaded: ${requestWithDetails.ownerName}")
                 
-                // Cargar información de la mascota
                 database.getReference("pets").child(request.petId)
                     .get()
                     .addOnSuccessListener { petSnapshot ->
@@ -73,7 +72,7 @@ class PeticionesActivity : AppCompatActivity() {
                         requestWithDetails.petAge = petSnapshot.child("edad").getValue(String::class.java) ?: "?"
                         requestWithDetails.petWeight = petSnapshot.child("peso").getValue(String::class.java) ?: "?"
                         
-                        println("DEBUG: Pet details loaded - Name: ${requestWithDetails.petName}")
+                        println("DEBUG: Pet details loaded - Name: ${requestWithDetails.petName}, Price: $${String.format("%.2f", request.price)}")
                         callback(requestWithDetails)
                     }
             }
@@ -83,7 +82,6 @@ class PeticionesActivity : AppCompatActivity() {
         val walkerId = auth.currentUser!!.uid
         println("DEBUG: Buscando peticiones para walkerId: $walkerId")
 
-        // Cambiar "requests" por "walkRequests"
         database.getReference("walkRequests")
             .get()
             .addOnSuccessListener { snapshot ->
@@ -115,7 +113,6 @@ class PeticionesActivity : AppCompatActivity() {
                                             requestsAdapter.notifyDataSetChanged()
                                             println("DEBUG: Adapter notified with ${requests.size} items")
                                             
-                                            // Mostrar mensaje si no hay peticiones
                                             if (requests.isEmpty()) {
                                                 Toast.makeText(this, "No hay peticiones pendientes", Toast.LENGTH_SHORT).show()
                                             }
@@ -143,10 +140,8 @@ class PeticionesActivity : AppCompatActivity() {
         val newStatus = if (action == "accept") "accepted" else "rejected"
         
         if (action == "accept") {
-            // Actualizar tanto el estado de la solicitud como el estado del paseador
             val updates = hashMapOf<String, Any>(
                 "walkRequests/${request.id}/status" to newStatus,
-                // Corrección de la ruta para el paseador
                 "users/paseadores/${auth.currentUser!!.uid}/activeServiceId" to request.id,
                 "users/paseadores/${auth.currentUser!!.uid}/activeService" to true
             )
@@ -166,7 +161,6 @@ class PeticionesActivity : AppCompatActivity() {
                     Toast.makeText(this, "Error al actualizar solicitud", Toast.LENGTH_SHORT).show()
                 }
         } else {
-            // Para rechazos, solo actualizar el estado de la solicitud
             database.getReference("walkRequests")
                 .child(request.id)
                 .child("status")
