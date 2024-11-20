@@ -1,5 +1,5 @@
 // PetsAdapter.kt
-package com.example.petstep
+package com.example.petstep 
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -11,7 +11,7 @@ import android.widget.TextView
 import com.example.petstep.model.MyPet
 import com.squareup.picasso.Picasso
 
-class PetsAdapter( 
+class PetsAdapter(
     private val context: Context,
     private var petsList: List<MyPet>
 ) : BaseAdapter() {
