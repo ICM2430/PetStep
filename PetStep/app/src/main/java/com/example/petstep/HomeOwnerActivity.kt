@@ -15,6 +15,9 @@ import android.widget.Toast
 import android.location.LocationManager
 import android.provider.Settings
 import androidx.appcompat.app.AlertDialog
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 
 class HomeOwnerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeOwnerBinding
@@ -47,8 +50,41 @@ class HomeOwnerActivity : AppCompatActivity() {
             startActivity(Intent(this, PerfilActivity::class.java))
         }
         binding.buttonServicioActual.setOnClickListener {
-            startActivity(Intent(this, RastreoActivity::class.java))
+            getActiveWalkerIdAndStartRastreoActivity()
         }
+    }
+
+    private fun getActiveWalkerIdAndStartRastreoActivity() {
+        val userId = FirebaseAuth.getInstance().currentUser!!.uid
+        val databaseReference = Firebase.database.reference
+
+        // Assuming the active service ID is stored under users/duenos/{userId}/activeServiceId
+        databaseReference.child("users/duenos/$userId/activeServiceId").get()
+            .addOnSuccessListener { snapshot ->
+                val activeServiceId = snapshot.getValue(String::class.java)
+                if (activeServiceId != null) {
+                    // Now get the walkerId from the walkRequests node
+                    databaseReference.child("walkRequests/$activeServiceId/walkerId").get()
+                        .addOnSuccessListener { walkerSnapshot ->
+                            val walkerId = walkerSnapshot.getValue(String::class.java)
+                            if (walkerId != null && walkerId.isNotEmpty()) {
+                                val intent = Intent(this, RastreoActivity::class.java)
+                                intent.putExtra("walkerId", walkerId)
+                                startActivity(intent)
+                            } else {
+                                Toast.makeText(this, "No se encontró el ID del paseador.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this, "Error al obtener el walkerId: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                } else {
+                    Toast.makeText(this, "No tienes un servicio activo.", Toast.LENGTH_LONG).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Error al obtener el servicio activo: ${e.message}", Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun isLocationEnabled(): Boolean {
