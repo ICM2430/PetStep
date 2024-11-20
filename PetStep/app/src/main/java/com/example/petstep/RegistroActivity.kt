@@ -91,9 +91,8 @@ class RegistroActivity : AppCompatActivity() {
     private fun registerUser(nombre: String, apellido: String, telefono: String, correo: String, contrasena: String, rol: String) {
         auth.createUserWithEmailAndPassword(correo, contrasena).addOnCompleteListener { task ->
             if (task.isSuccessful) {
+                val user = MyUser(nombre, apellido, telefono, correo, contrasena, rol)
                 val userId = auth.currentUser!!.uid
-                val user = MyUser(userId, nombre, apellido, telefono, correo, contrasena, rol)
-
 
                 // Save user to Firestore
                 db.collection("users").document(userId).set(user).addOnSuccessListener {
@@ -103,7 +102,6 @@ class RegistroActivity : AppCompatActivity() {
                     Toast.makeText(baseContext, "Failed to register user", Toast.LENGTH_SHORT).show()
                 }
 
-                // Save user to Realtime Database
                 val userRolePath = if (rol == "dueno") "duenos" else "paseadores"
                 realtimeDb.getReference("users/$userRolePath").child(userId).setValue(user).addOnSuccessListener {
                     Toast.makeText(baseContext, "User saved to Realtime Database", Toast.LENGTH_SHORT).show()
