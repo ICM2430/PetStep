@@ -2,8 +2,11 @@ package com.example.petstep
 
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import android.location.LocationManager
 import com.example.petstep.databinding.ActivityHomeWalkerBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -20,11 +23,14 @@ class HomeWalkerActivity : AppCompatActivity() {
     private val walkersRef = database.getReference("walkers")
     private var selectedAddress: String = ""
     private var selectedLatLng: Pair<Double, Double>? = null
+    private lateinit var locationManager: LocationManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeWalkerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
         // Inicializar Places
         if (!Places.isInitialized()) {
@@ -35,7 +41,11 @@ class HomeWalkerActivity : AppCompatActivity() {
         setupNavigation()
 
         binding.saveInfoButton.setOnClickListener {
-            saveWalkerInfo()
+            if (!isLocationEnabled()) {
+                showGPSDisabledAlert()
+            } else {
+                saveWalkerInfo()
+            }
         }
 
         loadWalkerData()
@@ -93,10 +103,24 @@ class HomeWalkerActivity : AppCompatActivity() {
             .addOnSuccessListener { snapshot ->
                 val price = snapshot.child("precioPorHora").getValue(Double::class.java)
                 val workZone = snapshot.child("workZone").getValue(String::class.java)
+                val workZoneLat = snapshot.child("workZoneLat").getValue(Double::class.java)
+                val workZoneLng = snapshot.child("workZoneLng").getValue(Double::class.java)
                 val available = snapshot.child("available").getValue(Boolean::class.java)
 
                 binding.precioCop.setText(price?.toString() ?: "")
-                // El AutocompleteSupportFragment maneja su propio estado
+                
+                // Update the AutocompleteSupportFragment with saved work zone
+                if (!workZone.isNullOrEmpty()) {
+                    selectedAddress = workZone
+                    if (workZoneLat != null && workZoneLng != null) {
+                        selectedLatLng = Pair(workZoneLat, workZoneLng)
+                    }
+                    val autocompleteFragment =
+                        supportFragmentManager.findFragmentById(R.id.autocomplete_fragment)
+                                as AutocompleteSupportFragment
+                    autocompleteFragment.setText(workZone)
+                }
+
                 if (available == true) {
                     binding.disponible.isChecked = true
                 } else {
@@ -150,5 +174,24 @@ class HomeWalkerActivity : AppCompatActivity() {
             .addOnFailureListener {
                 binding.saludo.text = "Hola"
             }
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+    private fun showGPSDisabledAlert() {
+        AlertDialog.Builder(this)
+            .setMessage("El GPS está desactivado. ¿Deseas activarlo?")
+            .setCancelable(false)
+            .setPositiveButton("Sí") { _, _ ->
+                startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                dialog.cancel()
+            }
+            .create()
+            .show()
     }
 }
