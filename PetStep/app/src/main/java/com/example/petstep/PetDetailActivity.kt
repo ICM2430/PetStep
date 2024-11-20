@@ -19,10 +19,10 @@ class PetDetailActivity : AppCompatActivity() {
         val pet = intent.getParcelableExtra<MyPet>("pet")
 
         pet?.let {
-            binding.petNameTextView.text = it.nombre
-            binding.petBreedTextView.text = it.raza
-            binding.petAgeTextView.text = it.edad
-            binding.petWeightTextView.text = it.peso
+            binding.petNameTextView.text = "Nombre: " + it.nombre
+            binding.petBreedTextView.text = "Raza: " + it.raza
+            binding.petAgeTextView.text = "Edad: " + it.edad
+            binding.petWeightTextView.text = "Peso: " + it.peso
             Picasso.get().load(it.photoUrl).into(binding.petPhotoImageView)
         }
     }

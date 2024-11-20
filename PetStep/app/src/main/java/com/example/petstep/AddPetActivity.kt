@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import com.example.petstep.databinding.ActivityAddPetBinding
 import com.example.petstep.model.MyPet
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
@@ -22,6 +23,7 @@ import java.util.*
 class AddPetActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAddPetBinding
+    private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
     private lateinit var storage: FirebaseStorage
     private lateinit var storageReference: StorageReference
@@ -46,6 +48,8 @@ class AddPetActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAddPetBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        auth = FirebaseAuth.getInstance()
 
         database = FirebaseDatabase.getInstance().getReference("pets")
         storage = FirebaseStorage.getInstance()
@@ -84,17 +88,24 @@ class AddPetActivity : AppCompatActivity() {
         val petBreed = binding.petBreedEditText.text.toString().trim()
         val petAge = binding.petAgeEditText.text.toString().trim()
         val petWeight = binding.petWeightEditText.text.toString().trim()
-        val userId = "someUserId" // Replace with actual user ID
+        val userId = auth.currentUser?.uid
+
+        if (userId == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         if (petName.isNotEmpty() && petBreed.isNotEmpty() && petAge.isNotEmpty() && petWeight.isNotEmpty() && photoUri != null) {
             val photoRef = storageReference.child("pet_photos/${UUID.randomUUID()}.jpg")
             photoRef.putFile(photoUri!!).addOnSuccessListener {
                 photoRef.downloadUrl.addOnSuccessListener { uri ->
                     val petId = database.push().key ?: return@addOnSuccessListener
-                    val pet = MyPet(petId,petName, petBreed,petAge,petWeight,userId, uri.toString())
-                    database.child("pets").child(petId).setValue(pet).addOnCompleteListener { task ->
+                    val pet = MyPet(petId, petName, petBreed, petAge, petWeight, userId, uri.toString())
+                    database.child(petId).setValue(pet).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
                             Toast.makeText(this, "Pet added successfully", Toast.LENGTH_SHORT).show()
+                            updatePetsList()
+                            startActivity(Intent(baseContext, MascotasActivity::class.java))
                             finish()
                         } else {
                             Toast.makeText(this, "Failed to add pet", Toast.LENGTH_SHORT).show()
@@ -107,5 +118,11 @@ class AddPetActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Please fill all fields and select a photo", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun updatePetsList() {
+        val intent = Intent(this, MascotasActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
     }
 }

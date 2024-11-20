@@ -3,6 +3,8 @@ package com.example.petstep
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.petstep.databinding.ActivityMascotasBinding
 import com.example.petstep.model.MyPet
@@ -31,26 +33,42 @@ class MascotasActivity : AppCompatActivity() {
 
         database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                petsList.clear()
+                val newPetsList = mutableListOf<MyPet>()
                 for (petSnapshot in snapshot.children) {
                     val pet = petSnapshot.getValue(MyPet::class.java)
                     if (pet != null) {
-                        petsList.add(pet)
+                        newPetsList.add(pet)
                     }
                 }
-                petsAdapter.notifyDataSetChanged()
+                petsList.clear()
+                petsList.addAll(newPetsList)
+                petsAdapter.updatePetsList(petsList)
+                updateEmptyView()
             }
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle possible errors.
+                Toast.makeText(this@MascotasActivity, "Failed to load pets: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         })
 
         binding.listViewMascotas.setOnItemClickListener { _, _, position, _ ->
-            val selectedPet = petsList[position]
-            val intent = Intent(this, PetDetailActivity::class.java)
-            intent.putExtra("pet", selectedPet)
-            startActivity(intent)
+            if (petsList.isNotEmpty()) {
+                val selectedPet = petsList[position]
+                val intent = Intent(this, PetDetailActivity::class.java)
+                intent.putExtra("pet", selectedPet)
+                startActivity(intent)
+            }
+        }
+    }
+
+    private fun updateEmptyView() {
+        if (petsList.isEmpty()) {
+            binding.emptyView.visibility = View.VISIBLE
+            binding.listViewMascotas.visibility = View.GONE
+        } else {
+            binding.emptyView.visibility = View.GONE
+            binding.listViewMascotas.visibility = View.VISIBLE
         }
     }
 }
