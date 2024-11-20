@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@android:color/white"
     tools:context=".RegistroActivity">
-
+ 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
