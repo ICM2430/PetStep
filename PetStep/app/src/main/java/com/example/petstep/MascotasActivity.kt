@@ -1,84 +1,88 @@
-// MascotasActivity.kt
 package com.example.petstep
 
-import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.petstep.adapters.PetAdapter
 import com.example.petstep.databinding.ActivityMascotasBinding
-import com.example.petstep.model.MyPet
+import com.example.petstep.adapters.com.example.petstep.model.Pet
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MascotasActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMascotasBinding
-    private lateinit var petsAdapter: PetsAdapter
-    private lateinit var petsList: MutableList<MyPet>
-    private lateinit var database: DatabaseReference
-    private lateinit var auth: FirebaseAuth
+    private val pets = mutableListOf<Pet>()
+    private val petAdapter = PetAdapter(pets) { pet -> deletePet(pet.id) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMascotasBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.buttonAgregarMascota.setOnClickListener {
-            startActivity(Intent(baseContext, AddPetActivity::class.java))
-        }
 
-        petsList = mutableListOf()
-        petsAdapter = PetsAdapter(this, petsList)
-        binding.listViewMascotas.adapter = petsAdapter
+        setupRecyclerView()
+        fetchPets()
 
-        auth = FirebaseAuth.getInstance()
-        val userId = auth.currentUser?.uid
-
-        if (userId != null) {
-            database = FirebaseDatabase.getInstance().getReference("pets")
-            val query = database.orderByChild("userId").equalTo(userId)
-
-            query.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val newPetsList = mutableListOf<MyPet>()
-                    for (petSnapshot in snapshot.children) {
-                        val pet = petSnapshot.getValue(MyPet::class.java)
-                        if (pet != null) {
-                            newPetsList.add(pet)
-                        }
-                    }
-                    petsList.clear()
-                    petsList.addAll(newPetsList)
-                    petsAdapter.updatePetsList(petsList)
-                    updateEmptyView()
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Handle possible errors.
-                    Toast.makeText(this@MascotasActivity, "Failed to load pets: ${error.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
-        } else {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.listViewMascotas.setOnItemClickListener { _, _, position, _ ->
-            if (petsList.isNotEmpty()) {
-                val selectedPet = petsList[position]
-                val intent = Intent(this, PetDetailActivity::class.java)
-                intent.putExtra("pet", selectedPet)
-                startActivity(intent)
-            }
+        binding.addPetButton.setOnClickListener {
+            addPet()
         }
     }
 
-    private fun updateEmptyView() {
-        if (petsList.isEmpty()) {
-            binding.emptyView.visibility = View.VISIBLE
-            binding.listViewMascotas.visibility = View.GONE
-        } else {
-            binding.emptyView.visibility = View.GONE
-            binding.listViewMascotas.visibility = View.VISIBLE
+    private fun setupRecyclerView() {
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(this@MascotasActivity)
+            adapter = petAdapter
         }
+    }
+
+    private fun fetchPets() {
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("users").document(userId).collection("pets")
+            .get()
+            .addOnSuccessListener { documents ->
+                pets.clear()
+                for (document in documents) {
+                    val pet = document.toObject(Pet::class.java).copy(id = document.id)
+                    pets.add(pet)
+                }
+                petAdapter.notifyDataSetChanged()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al cargar las mascotas.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun addPet() {
+        val newPet = Pet("Nuevo nombre", "Tipo", )
+
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("users").document(userId).collection("pets").add(newPet)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Mascota añadida.", Toast.LENGTH_SHORT).show()
+                fetchPets()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al añadir mascota.", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun deletePet(petId: String) {
+        val db = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("users").document(userId).collection("pets").document(petId)
+            .delete()
+            .addOnSuccessListener {
+                Toast.makeText(this, "Mascota eliminada.", Toast.LENGTH_SHORT).show()
+                fetchPets() // Recargar mascotas
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Error al eliminar mascota.", Toast.LENGTH_SHORT).show()
+            }
     }
 }
