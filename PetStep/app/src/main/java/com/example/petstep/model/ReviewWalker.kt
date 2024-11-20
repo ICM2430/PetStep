@@ -1,15 +1,33 @@
 package com.example.petstep.model
 
 import com.google.type.DateTime
+import java.util.Date
 import kotlin.properties.Delegates
 
 class ReviewWalker {
-    private lateinit var id: String
-    private lateinit var idWalker: String
-    private lateinit var idUser: String
-    private lateinit var review: String
-    private var calification : Int by Delegates.notNull()
-    private lateinit var date: DateTime
+    var id: String = ""
+        get() = field
+        set(value) { field = value }
+
+    var idWalker: String = ""
+        get() = field
+        set(value) { field = value }
+
+    var idUser: String = ""
+        get() = field
+        set(value) { field = value }
+
+    var review: String = ""
+        get() = field
+        set(value) { field = value }
+
+    var calification: Int = 0
+        get() = field
+        set(value) { field = value }
+
+    var date: Date = Date()
+        get() = field
+        set(value) { field = value }
 
     constructor()
 
@@ -19,7 +37,7 @@ class ReviewWalker {
         idUser: String,
         review: String,
         calification: Int,
-        date: DateTime
+        date: Date
     ) {
         this.id = id
         this.idWalker = idWalker

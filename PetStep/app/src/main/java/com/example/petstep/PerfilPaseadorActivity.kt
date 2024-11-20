@@ -61,7 +61,7 @@ class PerfilPaseadorActivity : AppCompatActivity() {
                     binding.textViewNombre.text = "$nombre $apellido"
                     binding.textViewCorreo.text = correo
                     binding.textViewTelefono.text = telefono
-                    binding.textViewCalificacion.text = "4.9/5"
+                    binding.textViewCalificacion.text = dataSnapshot.child("calificacion").getValue(Int::class.java)?.toString() ?: "N/A"
                     binding.textViewNumServicios.text = "2"
 
                     if (profilePhotoUrl != null) {
