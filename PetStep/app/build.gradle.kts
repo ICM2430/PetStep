@@ -17,8 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "MAPS_API_KEY", "\"${findProperty("MAPS_API_KEY") ?: ""}\"")
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
     buildTypes {
@@ -61,11 +63,20 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.0")
     implementation("com.github.MKergall:osmbonuspack:6.8.0")
+    implementation("com.google.maps:google-maps-services:2.1.2")
+    implementation("com.google.maps.android:android-maps-utils:2.3.0")
+    implementation("org.slf4j:slf4j-simple:1.7.32")
     kapt("com.github.bumptech.glide:compiler:4.12.0")
     implementation("com.google.firebase:firebase-storage:20.0.0")
     implementation("com.google.firebase:firebase-appcheck-debug:18.0.0")
     implementation("com.google.firebase:firebase-database:20.0.0")
     implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.android.libraries.places:places:3.3.0")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation("com.google.android.material:material:1.9.0")
+    implementation("com.google.firebase:firebase-messaging-ktx")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -7,43 +7,53 @@
     android:layout_height="match_parent"
     tools:context=".PaseoActivity">
 
-    <ImageView
-        android:id="@+id/imageView6"
-        android:layout_width="359dp"
-        android:layout_height="550dp"
-        android:layout_marginStart="26dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="26dp"
-        android:layout_marginBottom="90dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+    <!-- Título Paseadores Cercanos -->
+    <TextView
+        android:id="@+id/textViewPaseadores"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Paseadores Cercanos"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textViewPaseadores"
-        app:srcCompat="@drawable/paseadorescercanoslista"
-        tools:ignore="MissingConstraints" />
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Google Map -->
+
+    <!-- RecyclerView for Walkers List -->
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="0dp"
+        android:layout_height="250dp"
+        android:layout_marginTop="156dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewPaseadores" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/map"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <ImageView
         android:id="@+id/imageViewDecoracion"
         android:layout_width="0dp"
         android:layout_height="200dp"
         android:scaleType="centerCrop"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/circulosdecoracion" />
-
-    <TextView
-        android:id="@+id/textViewPaseadores"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"
-        android:text="Paseadores en tu área"
-        android:textColor="@android:color/black"
-        android:textSize="18sp"
-        android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageViewDecoracion" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/circulosdecoracion" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -102,7 +102,6 @@ class RegistroActivity : AppCompatActivity() {
                     Toast.makeText(baseContext, "Failed to register user", Toast.LENGTH_SHORT).show()
                 }
 
-                // Save user to Realtime Database
                 val userRolePath = if (rol == "dueno") "duenos" else "paseadores"
                 realtimeDb.getReference("users/$userRolePath").child(userId).setValue(user).addOnSuccessListener {
                     Toast.makeText(baseContext, "User saved to Realtime Database", Toast.LENGTH_SHORT).show()

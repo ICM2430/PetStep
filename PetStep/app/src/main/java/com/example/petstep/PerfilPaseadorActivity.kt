@@ -27,6 +27,7 @@ class PerfilPaseadorActivity : AppCompatActivity() {
         userRef = database.getReference("users/paseadores").child(userId!!)
 
         binding.buttonVerHistorial.setOnClickListener {
+            // Ya no necesitamos pasar isOwner porque la actividad lo determinará
             startActivity(Intent(this, HistorialServiciosActivity::class.java))
         }
         binding.buttonCerrarSesion.setOnClickListener {
