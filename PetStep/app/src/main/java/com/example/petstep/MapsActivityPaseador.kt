@@ -716,7 +716,7 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
             .child(requestId)
             .updateChildren(mapOf(
                 "paseadorLat" to null,
-                "paseadorLng" to null  // Changed from "paseadorLon" to "paseadorLng"
+                "paseadorLng" to null 
             ))
 
         val totalDistance = calculateTotalDistance()
