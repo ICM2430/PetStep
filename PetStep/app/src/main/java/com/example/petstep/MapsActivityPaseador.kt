@@ -670,44 +670,55 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
     }
 
     private fun updateLocationInFirebase(location: Location, requestId: String) {
-        // Solo guardar ubicaciones si el servicio está en progreso
-        if (serviceStatus != "in_progress") return
+        // Solo actualizar ubicación del paseador si el servicio está aceptado o en progreso
+        if (serviceStatus != "accepted" && serviceStatus != "in_progress") return
 
-        val currentTime = System.currentTimeMillis()
-
-        // Verificar si ha pasado suficiente tiempo desde la última actualización
-        if (currentTime - lastLocationUpdate < MIN_UPDATE_INTERVAL) {
-            return
-        }
-
-        // Verificar si la ubicación ha cambiado significativamente
-        if (lastSavedLocation != null &&
-            location.distanceTo(lastSavedLocation!!) < MIN_DISTANCE_CHANGE) {
-            return
-        }
-
-        val geoPoint = mapOf(
-            "latitude" to location.latitude,
-            "longitude" to location.longitude,
-            "timestamp" to currentTime
-        )
-
+        // Actualizar la ubicación del paseador en tiempo real siempre
         database.getReference("walkRequests")
             .child(requestId)
-            .child("route")
-            .child(currentTime.toString())
-            .setValue(geoPoint)
-            .addOnSuccessListener {
-                lastLocationUpdate = currentTime
-                lastSavedLocation = location
-                Log.d(TAG, "Ubicación guardada: lat=${location.latitude}, lng=${location.longitude}")
+            .updateChildren(mapOf(
+                "paseadorLat" to location.latitude,
+                "paseadorLng" to location.longitude  
+            ))
+
+        // Solo guardar puntos de ruta cuando está en progreso
+        if (serviceStatus == "in_progress") {
+            val currentTime = System.currentTimeMillis()
+            
+            // Verificar intervalos de actualización para la ruta
+            if (currentTime - lastLocationUpdate >= MIN_UPDATE_INTERVAL &&
+                (lastSavedLocation == null || 
+                 location.distanceTo(lastSavedLocation!!) >= MIN_DISTANCE_CHANGE)) {
+                
+                val routePoint = mapOf(
+                    "latitude" to location.latitude,
+                    "longitude" to location.longitude,
+                    "timestamp" to currentTime
+                )
+
+                database.getReference("walkRequests")
+                    .child(requestId)
+                    .child("route")
+                    .child(currentTime.toString())
+                    .setValue(routePoint)
+                    .addOnSuccessListener {
+                        lastLocationUpdate = currentTime
+                        lastSavedLocation = location
+                        Log.d(TAG, "Punto de ruta guardado: lat=${location.latitude}, lng=${location.longitude}")
+                    }
             }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Error al guardar ubicación: ", e)
-            }
+        }
     }
 
     private fun finishService(requestId: String) {
+        // Antes de finalizar, eliminar las coordenadas del paseador
+        database.getReference("walkRequests")
+            .child(requestId)
+            .updateChildren(mapOf(
+                "paseadorLat" to null,
+                "paseadorLng" to null  // Changed from "paseadorLon" to "paseadorLng"
+            ))
+
         val totalDistance = calculateTotalDistance()
         val elevationStats = calculateElevationStats()
 
