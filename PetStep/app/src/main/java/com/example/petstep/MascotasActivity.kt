@@ -3,6 +3,7 @@ package com.example.petstep
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -37,6 +38,7 @@ class MascotasActivity : AppCompatActivity() {
         if (userId != null) {
             database = FirebaseDatabase.getInstance().getReference("pets")
             val query = database.orderByChild("userId").equalTo(userId)
+            Log.d("MascotasActivity", "Querying pets for userId: $userId")
 
             query.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -54,20 +56,26 @@ class MascotasActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    // Handle possible errors.
+                    Log.e("MascotasActivity", "Failed to load pets", error.toException())
                     Toast.makeText(this@MascotasActivity, "Failed to load pets: ${error.message}", Toast.LENGTH_SHORT).show()
                 }
             })
         } else {
+            Log.e("MascotasActivity", "User not logged in")
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
         }
 
         binding.listViewMascotas.setOnItemClickListener { _, _, position, _ ->
             if (petsList.isNotEmpty()) {
                 val selectedPet = petsList[position]
-                val intent = Intent(this, PetDetailActivity::class.java)
-                intent.putExtra("pet", selectedPet)
-                startActivity(intent)
+                if (selectedPet.id != null) {
+                    val intent = Intent(this, PetDetailActivity::class.java)
+                    intent.putExtra("pet", selectedPet)
+                    intent.putExtra("petId", selectedPet.id)
+                    startActivity(intent)
+                } else {
+                    Log.e("MascotasActivity", "Selected pet ID is null")
+                }
             }
         }
     }

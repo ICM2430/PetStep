@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -46,6 +47,7 @@ class AddPetActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("AddPetActivity", "onCreate called")
         binding = ActivityAddPetBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -84,6 +86,7 @@ class AddPetActivity : AppCompatActivity() {
     }
 
     private fun savePet() {
+        Log.d("AddPetActivity", "Saving pet")
         val petName = binding.petNameEditText.text.toString().trim()
         val petBreed = binding.petBreedEditText.text.toString().trim()
         val petAge = binding.petAgeEditText.text.toString().trim()
@@ -91,6 +94,7 @@ class AddPetActivity : AppCompatActivity() {
         val userId = auth.currentUser?.uid
 
         if (userId == null) {
+            Log.e("AddPetActivity", "User not authenticated")
             Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show()
             return
         }
@@ -103,19 +107,23 @@ class AddPetActivity : AppCompatActivity() {
                     val pet = MyPet(petId, petName, petBreed, petAge, petWeight, userId, uri.toString())
                     database.child(petId).setValue(pet).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
+                            Log.d("AddPetActivity", "Pet added successfully")
                             Toast.makeText(this, "Pet added successfully", Toast.LENGTH_SHORT).show()
                             updatePetsList()
                             startActivity(Intent(baseContext, MascotasActivity::class.java))
                             finish()
                         } else {
+                            Log.e("AddPetActivity", "Failed to add pet")
                             Toast.makeText(this, "Failed to add pet", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             }.addOnFailureListener {
+                Log.e("AddPetActivity", "Failed to upload photo", it)
                 Toast.makeText(this, "Failed to upload photo", Toast.LENGTH_SHORT).show()
             }
         } else {
+            Log.e("AddPetActivity", "Please fill all fields and select a photo")
             Toast.makeText(this, "Please fill all fields and select a photo", Toast.LENGTH_SHORT).show()
         }
     }
