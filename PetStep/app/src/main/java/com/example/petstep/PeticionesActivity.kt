@@ -148,6 +148,17 @@ class PeticionesActivity : AppCompatActivity() {
 
             database.reference.updateChildren(updates)
                 .addOnSuccessListener {
+                    // Send notification to owner
+                    val notificationService = NotificationService()
+                    database.getReference("users/paseadores/${auth.currentUser!!.uid}")
+                        .get()
+                        .addOnSuccessListener { walkerSnapshot ->
+                            val walkerName = "${walkerSnapshot.child("nombre").getValue(String::class.java)} ${
+                                walkerSnapshot.child("apellido").getValue(String::class.java)
+                            }"
+                            notificationService.sendWalkAcceptedNotification(request.userId, walkerName)
+                        }
+
                     println("DEBUG: Actualizando campos del paseador ${auth.currentUser!!.uid}")
                     Toast.makeText(this, "Solicitud aceptada", Toast.LENGTH_SHORT).show()
                     val intent = Intent(this, MapsActivityPaseador::class.java).apply {

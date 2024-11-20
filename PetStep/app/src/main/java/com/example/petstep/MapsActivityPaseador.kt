@@ -708,31 +708,48 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
     }
 
     private fun finishService(requestId: String) {
-        // Calculate total distance from route points
         val totalDistance = calculateTotalDistance()
-
-        // Añadir análisis de elevación
         val elevationStats = calculateElevationStats()
 
-        val updates = hashMapOf<String, Any?>(
-            "walkRequests/$requestId/status" to "completed",
-            "walkRequests/$requestId/endTime" to ServerValue.TIMESTAMP,
-            "walkRequests/$requestId/distance" to totalDistance,
-            "walkRequests/$requestId/totalSteps" to stepCount,  // Agregar total de pasos
-            "walkRequests/$requestId/elevationStats" to elevationStats,
-            "users/paseadores/${auth.currentUser!!.uid}/activeServiceId" to null,
-            "users/paseadores/${auth.currentUser!!.uid}/activeService" to false
-        )
+        // Get request details to send notification
+        database.getReference("walkRequests").child(requestId).get()
+            .addOnSuccessListener { requestSnapshot ->
+                val userId = requestSnapshot.child("userId").getValue(String::class.java)
+                
+                // Get walker's name
+                database.getReference("users/paseadores/${auth.currentUser!!.uid}")
+                    .get()
+                    .addOnSuccessListener { walkerSnapshot ->
+                        val walkerName = "${walkerSnapshot.child("nombre").getValue(String::class.java)} ${
+                            walkerSnapshot.child("apellido").getValue(String::class.java)
+                        }"
+                        
+                        val updates = hashMapOf<String, Any?>(
+                            "walkRequests/$requestId/status" to "completed",
+                            "walkRequests/$requestId/endTime" to ServerValue.TIMESTAMP,
+                            "walkRequests/$requestId/distance" to totalDistance,
+                            "walkRequests/$requestId/totalSteps" to stepCount,
+                            "walkRequests/$requestId/elevationStats" to elevationStats,
+                            "users/paseadores/${auth.currentUser!!.uid}/activeServiceId" to null,
+                            "users/paseadores/${auth.currentUser!!.uid}/activeService" to false
+                        )
 
-        database.reference.updateChildren(updates)
-            .addOnSuccessListener {
-                println("DEBUG: Servicio finalizado - Distancia: $totalDistance km")
-                Toast.makeText(this, "Servicio finalizado", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-            .addOnFailureListener { e ->
-                println("ERROR: Fallo al finalizar servicio: ${e.message}")
-                Toast.makeText(this, "Error al finalizar servicio", Toast.LENGTH_SHORT).show()
+                        database.reference.updateChildren(updates)
+                            .addOnSuccessListener {
+                                // Send notification to owner
+                                userId?.let {
+                                    NotificationService().sendWalkCompletedNotification(it, walkerName, totalDistance)
+                                }
+                                
+                                println("DEBUG: Servicio finalizado - Distancia: $totalDistance km")
+                                Toast.makeText(this, "Servicio finalizado", Toast.LENGTH_SHORT).show()
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                println("ERROR: Fallo al finalizar servicio: ${e.message}")
+                                Toast.makeText(this, "Error al finalizar servicio", Toast.LENGTH_SHORT).show()
+                            }
+                    }
             }
     }
 
@@ -782,18 +799,39 @@ class MapsActivityPaseador : AppCompatActivity(), OnMapReadyCallback, SensorEven
     }
 
     private fun startWalk() {
-        startTime = System.currentTimeMillis()  // Guardar tiempo de inicio
+        startTime = System.currentTimeMillis()
         val updates = hashMapOf<String, Any>(
             "walkRequests/$activeRequestId/status" to "in_progress",
             "walkRequests/$activeRequestId/startTime" to startTime
         )
 
-        database.reference.updateChildren(updates)
-            .addOnSuccessListener {
-                serviceStatus = "in_progress"
-                routePoints.clear() // Limpiar ruta anterior
-                updateUIForStatus()
-                startTimer()
+        // Get request details to send notification
+        database.getReference("walkRequests").child(activeRequestId).get()
+            .addOnSuccessListener { requestSnapshot ->
+                val userId = requestSnapshot.child("userId").getValue(String::class.java)
+                
+                // Get walker's name
+                database.getReference("users/paseadores/${auth.currentUser!!.uid}")
+                    .get()
+                    .addOnSuccessListener { walkerSnapshot ->
+                        val walkerName = "${walkerSnapshot.child("nombre").getValue(String::class.java)} ${
+                            walkerSnapshot.child("apellido").getValue(String::class.java)
+                        }"
+                        
+                        // Update status and send notification
+                        database.reference.updateChildren(updates)
+                            .addOnSuccessListener {
+                                serviceStatus = "in_progress"
+                                routePoints.clear()
+                                updateUIForStatus()
+                                startTimer()
+                                
+                                // Send notification to owner
+                                userId?.let {
+                                    NotificationService().sendWalkStartedNotification(it, walkerName)
+                                }
+                            }
+                    }
             }
     }
 

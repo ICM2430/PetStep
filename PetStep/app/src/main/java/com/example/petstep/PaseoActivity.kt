@@ -28,6 +28,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ServerValue
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import android.location.Location
+import android.content.Context
 
 class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -276,6 +277,16 @@ class PaseoActivity : AppCompatActivity(), OnMapReadyCallback {
 
         requestRef.child(requestId).setValue(request)
             .addOnSuccessListener {
+                // Send notification
+                val notificationService = NotificationService()
+                FirebaseDatabase.getInstance().getReference("users")
+                    .child(userId)
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        val ownerName = snapshot.child("nombre").getValue(String::class.java) ?: "Usuario"
+                        notificationService.sendWalkRequestNotification(walkerId, ownerName)
+                    }
+                
                 Toast.makeText(this, 
                     "Solicitud enviada exitosamente\nPrecio: $${String.format("%.2f", priceForDuration)}", 
                     Toast.LENGTH_SHORT).show()
